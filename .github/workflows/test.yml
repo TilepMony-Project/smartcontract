@@ -1,4 +1,4 @@
-name: CI
+name: smart-contract-ci
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 env:
-  FOUNDRY_PROFILE: ci
+  FOUNDRY_PROFILE: smart-contract-ci
 
 jobs:
   check:
@@ -38,3 +38,45 @@ jobs:
         run: |
           forge test -vvv
         id: test
+      - name: Notify Telegram (Success)
+        if: success()
+        run: |
+          TEXT=$(cat <<'EOF'
+          ✅ *Smart Contract Test Success!*
+          
+          Repository: ${{ github.repository }}
+          Branch: ${{ github.ref_name }}
+          By: ${{ github.actor }}
+          
+          *Commits:*
+          ${{ env.COMMITS }}
+          
+          🧩 [View Workflow Logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          EOF
+          )
+          TEXT_URLENCODED=$(echo "$TEXT" | jq -s -R -r @uri)
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+            -d message_thread_id="${{ secrets.TELEGRAM_TOPIC_ID }}" \
+            -d text="$TEXT_URLENCODED" \
+            -d parse_mode="Markdown"
+
+      - name: Notify Telegram (Failed)
+        if: failure()
+        run: |
+          TEXT=$(cat <<'EOF'
+          ❌ *Smart Contract Test Failed!*
+          
+          Repository: ${{ github.repository }}
+          Branch: ${{ github.ref_name }}
+          By: ${{ github.actor }}
+          
+          🧩 [View Workflow Logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          EOF
+          )
+          TEXT_URLENCODED=$(echo "$TEXT" | jq -s -R -r @uri)
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+            -d message_thread_id="${{ secrets.TELEGRAM_TOPIC_ID }}" \
+            -d text="$TEXT_URLENCODED" \
+            -d parse_mode="Markdown"

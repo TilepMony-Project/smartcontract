@@ -54,7 +54,7 @@ jobs:
         if: success()
         run: |
           TEXT=$(cat <<'EOF'
-          ✅ *Smart Contract Test Success!*
+          ✅ *Smart Contract Test Passed!*
           
           Repository: [${{ github.repository }}](${{ github.server_url }}/${{ github.repository }})
           Branch: [${{ github.ref_name }}](${{ github.server_url }}/${{ github.repository }}/tree/${{ github.ref_name }})
@@ -71,7 +71,8 @@ jobs:
             -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
             -d message_thread_id="${{ secrets.TELEGRAM_TOPIC_ID }}" \
             -d text="$TEXT_URLENCODED" \
-            -d parse_mode="Markdown"
+            -d parse_mode="Markdown" \
+            -d disable_web_page_preview="true"
 
       - name: Notify Telegram (Failed)
         if: failure()
@@ -94,4 +95,5 @@ jobs:
             -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
             -d message_thread_id="${{ secrets.TELEGRAM_TOPIC_ID }}" \
             -d text="$TEXT_URLENCODED" \
-            -d parse_mode="Markdown"
+            -d parse_mode="Markdown" \
+            -d disable_web_page_preview="true"

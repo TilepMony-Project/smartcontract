@@ -38,6 +38,18 @@ jobs:
         run: |
           forge test -vvv
         id: test
+
+      - name: Get Commit Messages
+        id: get_commits
+        run: |
+          if [ "${{ github.event_name }}" == "push" ]; then
+            COMMITS=$(echo '${{ toJSON(github.event.commits) }}' | jq -r '.[] | "- " + (.message | split("\n")[0])')
+          else
+            COMMITS="Manual Trigger / Not a push event"
+          fi
+          echo "COMMITS<<EOF" >> $GITHUB_ENV
+          echo "$COMMITS" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
       - name: Notify Telegram (Success)
         if: success()
         run: |
@@ -70,6 +82,9 @@ jobs:
           Repository: ${{ github.repository }}
           Branch: ${{ github.ref_name }}
           By: ${{ github.actor }}
+
+          *Commits:*
+          ${{ env.COMMITS }}
           
           🧩 [View Workflow Logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
           EOF

@@ -43,7 +43,7 @@ jobs:
         id: get_commits
         run: |
           if [ "${{ github.event_name }}" == "push" ]; then
-            COMMITS=$(echo '${{ toJSON(github.event.commits) }}' | jq -r '.[] | "- " + (.message | split("\n")[0])')
+            COMMITS=$(echo '${{ toJSON(github.event.commits) }}' | jq -r '.[] | "- [" + (.message | split("\n")[0]) + "](" + .url + ")"')
           else
             COMMITS="Manual Trigger / Not a push event"
           fi
@@ -56,9 +56,9 @@ jobs:
           TEXT=$(cat <<'EOF'
           ✅ *Smart Contract Test Success!*
           
-          Repository: ${{ github.repository }}
-          Branch: ${{ github.ref_name }}
-          By: ${{ github.actor }}
+          Repository: [${{ github.repository }}](${{ github.server_url }}/${{ github.repository }})
+          Branch: [${{ github.ref_name }}](${{ github.server_url }}/${{ github.repository }}/tree/${{ github.ref_name }})
+          By: [${{ github.actor }}](${{ github.server_url }}/${{ github.actor }})
           
           *Commits:*
           ${{ env.COMMITS }}
@@ -79,9 +79,9 @@ jobs:
           TEXT=$(cat <<'EOF'
           ❌ *Smart Contract Test Failed!*
           
-          Repository: ${{ github.repository }}
-          Branch: ${{ github.ref_name }}
-          By: ${{ github.actor }}
+          Repository: [${{ github.repository }}](${{ github.server_url }}/${{ github.repository }})
+          Branch: [${{ github.ref_name }}](${{ github.server_url }}/${{ github.repository }}/tree/${{ github.ref_name }})
+          By: [${{ github.actor }}](${{ github.server_url }}/${{ github.actor }})
 
           *Commits:*
           ${{ env.COMMITS }}

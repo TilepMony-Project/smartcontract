@@ -7,123 +7,105 @@ Dokumen ini menjelaskan desain teknis untuk aplikasi DeFi yang mengintegrasikan 
 Berikut adalah diagram arsitektur yang menggambarkan hubungan antar komponen dengan protokol-protokol spesifik di Mantle. Diagram ini telah diperbarui untuk memastikan kompatibilitas syntax dan kejelasan alur.
 
 ```mermaid
-graph TD
-    %% Actors
-    User((User))
-    Wallet[User Wallet]
-    Frontend[Frontend DApp]
-
-    %% Main Entry Point
-    subgraph "Core Layer"
-        Controller[MainController]
-        Registry[Address Registry]
-    end
-
-    %% Vault & Yield Layer (Mantle Ecosystem)
-    subgraph "Vault & Yield Layer"
-        Vault["Vault Contract <br/>(ERC4626 Standard)"]
-        
-        subgraph "Adapters"
-            AdptInit["INIT Capital Adapter"]
-            AdptMeth["MethLab Adapter"]
-            AdptAurelius["Aurelius Adapter"]
-        end
-        
-        subgraph "Mantle Yield Protocols"
-            ProtoInit["INIT Capital <br/>(Liquidity Hook)"]
-            ProtoMeth["MethLab <br/>(Fixed Rate/Term)"]
-            ProtoAurelius["Aurelius Finance <br/>(CDP & Lending)"]
-        end
-    end
-
-    %% Swap Layer (Mantle Ecosystem)
-    subgraph "Swap Layer"
-        SwapRouter[SwapRouter Aggregator]
-        
-        subgraph "DEXs"
-            Moe[Merchant Moe]
-            Vertex[Vertex Protocol]
-            FusionX[FusionX]
-        end
-    end
-
-    %% Bridge Layer (Mantle Ecosystem)
-    subgraph "Bridge Layer"
-        BridgeMgr[BridgeManager]
-        
-        subgraph "Cross-Chain Providers"
-            Stargate["Stargate <br/>(Liquidity Transport)"]
-            Axelar["Axelar <br/>(Interoperability)"]
-            L0["LayerZero <br/>(Omnichain)"]
-        end
-        
-        subgraph "Destination Chains"
-            ChainEth[Ethereum]
-            ChainArb[Arbitrum]
-            ChainOp[Optimism]
-        end
-    end
-
-    %% Governance & Utils
-    subgraph "Management & Utils"
-        FeeMgr[FeeManager]
-        RewardDist[RewardDistributor]
-        Gov[GovernanceProxy]
-        Oracle[PriceOracle]
-        Math[MathLib]
-    end
-
-    %% Connections
-    User --> Wallet
-    Wallet --> Frontend
+---
+config:
+  layout: elk
+  look: classic
+---
+flowchart TB
+ subgraph subGraph0["Core Layer"]
+        Controller["MainController"]
+        Registry["Address Registry"]
+  end
+ subgraph Adapters["Adapters"]
+        AdptInit["INIT Capital Adapter"]
+        AdptMeth["MethLab Adapter"]
+        AdptAurelius["Aurelius Adapter"]
+  end
+ subgraph subGraph2["Mantle Yield Protocols"]
+        ProtoInit["INIT Capital <br>(Liquidity Hook)"]
+        ProtoMeth["MethLab <br>(Fixed Rate/Term)"]
+        ProtoAurelius["Aurelius Finance <br>(CDP &amp; Lending)"]
+  end
+ subgraph subGraph3["Vault & Yield Layer"]
+        Vault["Vault Contract <br>(ERC4626 Standard)"]
+        Adapters
+        subGraph2
+  end
+ subgraph DEXs["DEXs"]
+        Moe["Merchant Moe"]
+        Vertex["Vertex Protocol"]
+        FusionX["FusionX"]
+  end
+ subgraph subGraph5["Swap Layer"]
+        SwapRouter["SwapRouter Aggregator"]
+        DEXs
+  end
+ subgraph subGraph6["Cross-Chain Providers"]
+        Stargate["Stargate <br>(Liquidity Transport)"]
+        Axelar["Axelar <br>(Interoperability)"]
+        L0["LayerZero <br>(Omnichain)"]
+  end
+ subgraph subGraph7["Destination Chains"]
+        ChainEth["Ethereum"]
+        ChainArb["Arbitrum"]
+        ChainOp["Optimism"]
+  end
+ subgraph subGraph8["Bridge Layer"]
+        BridgeMgr["BridgeManager"]
+        subGraph6
+        subGraph7
+  end
+ subgraph subGraph9["Management & Utils"]
+        FeeMgr["FeeManager"]
+        RewardDist["RewardDistributor"]
+        Gov["GovernanceProxy"]
+        Oracle["PriceOracle"]
+        Math["MathLib"]
+  end
+    User(("User")) --> Wallet["User Wallet"]
+    Wallet --> Frontend["Frontend DApp"]
     Frontend --> Controller
-
-    %% Controller Logic
     Controller -- "1. Deposit/Withdraw" --> Vault
     Controller -- "2. Swap Request" --> SwapRouter
     Controller -- "3. Bridge Request" --> BridgeMgr
     Controller -.-> Registry
-
-    %% Vault Logic
-    Vault -- "Delegate Call" --> AdptInit
-    Vault -- "Delegate Call" --> AdptMeth
-    Vault -- "Delegate Call" --> AdptAurelius
-    Vault -.-> Oracle
-    Vault -.-> Math
-
+    Vault -- Delegate Call --> AdptInit & AdptMeth & AdptAurelius
+    Vault -.-> Oracle & Math
     AdptInit <==> ProtoInit
     AdptMeth <==> ProtoMeth
     AdptAurelius <==> ProtoAurelius
-
-    %% Swap Logic
-    SwapRouter --> Moe
-    SwapRouter --> Vertex
-    SwapRouter --> FusionX
-
-    %% Bridge Logic
-    BridgeMgr -- "Route: Stargate" --> Stargate
-    BridgeMgr -- "Route: Axelar" --> Axelar
-    BridgeMgr -- "Route: LayerZero" --> L0
-    
+    SwapRouter --> Moe & Vertex & FusionX
+    BridgeMgr -- Route: Stargate --> Stargate
+    BridgeMgr -- Route: Axelar --> Axelar
+    BridgeMgr -- Route: LayerZero --> L0
     Stargate -.-> ChainEth
     Axelar -.-> ChainArb
     L0 -.-> ChainOp
-
-    %% Fee & Gov Logic
-    Controller -- "Collect Fees" --> FeeMgr
-    Vault -- "Yield Fees" --> FeeMgr
+    Controller -- Collect Fees --> FeeMgr
+    Vault -- Yield Fees --> FeeMgr
     FeeMgr --> RewardDist
-    Gov -- "Admin Control" --> Controller
-    Gov -- "Update Params" --> FeeMgr
+    Gov -- Admin Control --> Controller
+    Gov -- Update Params --> FeeMgr
 
-    %% Styling
-    classDef core fill:#f9f,stroke:#333,stroke-width:2px;
-    classDef vault fill:#ccf,stroke:#333,stroke-width:2px;
-    classDef ext fill:#eee,stroke:#333,stroke-dasharray: 5 5;
-    
-    class Controller,Registry core;
-    class Vault,AdptInit,AdptMeth,AdptAurelius vault;
-    class ProtoInit,ProtoMeth,ProtoAurelius,Moe,Vertex,FusionX,Stargate,Axelar,L0 ext;
+     Controller:::core
+     Registry:::core
+     Vault:::vault
+     AdptInit:::vault
+     AdptMeth:::vault
+     AdptAurelius:::vault
+     ProtoInit:::ext
+     ProtoMeth:::ext
+     ProtoAurelius:::ext
+     Moe:::ext
+     Vertex:::ext
+     FusionX:::ext
+     Stargate:::ext
+     Axelar:::ext
+     L0:::ext
+    classDef core fill:#f9f,stroke:#333,stroke-width:2px
+    classDef vault fill:#ccf,stroke:#333,stroke-width:2px
+    classDef ext fill:#eee,stroke:#333,stroke-dasharray: 5 5
 ```
 
 ---

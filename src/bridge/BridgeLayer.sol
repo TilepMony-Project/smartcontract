@@ -18,23 +18,14 @@ contract BridgeLayer is Ownable {
         emit AdapterUpdated(adapter);
     }
 
-    function bridge(
-        address token,
-        uint256 amount,
-        uint256 dstChainId,
-        address recipient,
-        bytes calldata extraData
-    ) external payable {
+    function bridge(address token, uint256 amount, uint256 dstChainId, address recipient, bytes calldata extraData)
+        external
+        payable
+    {
         require(axelarAdapter != address(0), "BridgeLayer: NO_ADAPTER");
 
         emit BridgeRequested(token, amount, dstChainId, recipient);
 
-        IBridgeAdapter(axelarAdapter).bridge{value: msg.value}(
-            token,
-            amount,
-            dstChainId,
-            recipient,
-            extraData
-        );
+        IBridgeAdapter(axelarAdapter).bridge{value: msg.value}(token, amount, dstChainId, recipient, extraData);
     }
 }

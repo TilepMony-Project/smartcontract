@@ -31,11 +31,10 @@ contract AxelarBridgeAdapter is IBridgeAdapter, Ownable, ReentrancyGuard {
     }
 
     /// @notice Set konfigurasi destinasi utk chain tertentu.
-    function setDestination(
-        uint256 chainId,
-        string calldata axelarChain,
-        string calldata receiver
-    ) external onlyOwner {
+    function setDestination(uint256 chainId, string calldata axelarChain, string calldata receiver)
+        external
+        onlyOwner
+    {
         chainIdToAxelarName[chainId] = axelarChain;
         dstChainIdToReceiver[chainId] = receiver;
         emit DestinationSet(chainId, axelarChain, receiver);
@@ -43,13 +42,12 @@ contract AxelarBridgeAdapter is IBridgeAdapter, Ownable, ReentrancyGuard {
 
     /// @notice Fungsi yang dipanggil oleh BridgeLayer.
     ///         Di sini token di-lock dan pesan cross-chain dikirim.
-    function bridge(
-        address token,
-        uint256 amount,
-        uint256 dstChainId,
-        address recipient,
-        bytes calldata extraData
-    ) external payable override nonReentrant {
+    function bridge(address token, uint256 amount, uint256 dstChainId, address recipient, bytes calldata extraData)
+        external
+        payable
+        override
+        nonReentrant
+    {
         string memory dstChain = chainIdToAxelarName[dstChainId];
         string memory receiver = dstChainIdToReceiver[dstChainId];
 
@@ -67,11 +65,7 @@ contract AxelarBridgeAdapter is IBridgeAdapter, Ownable, ReentrancyGuard {
         // Bayar gas cross-chain (opsional tapi recommended)
         if (msg.value > 0) {
             gasService.payNativeGasForContractCall{value: msg.value}(
-                address(this),
-                dstChain,
-                receiver,
-                payload,
-                msg.sender
+                address(this), dstChain, receiver, payload, msg.sender
             );
         }
 

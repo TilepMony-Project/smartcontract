@@ -31,13 +31,11 @@ contract MockBridgeAdapter is IBridgeAdapter {
         address caller
     );
 
-    function bridge(
-        address token,
-        uint256 amount,
-        uint256 dstChainId,
-        address recipient,
-        bytes calldata extraData
-    ) external payable override {
+    function bridge(address token, uint256 amount, uint256 dstChainId, address recipient, bytes calldata extraData)
+        external
+        payable
+        override
+    {
         lastToken = token;
         lastAmount = amount;
         lastDstChainId = dstChainId;
@@ -57,11 +55,9 @@ contract MockGateway is IAxelarGateway {
     bytes public lastPayload;
     uint256 public callCount;
 
-    function callContract(
-        string calldata destinationChain,
-        string calldata contractAddress,
-        bytes calldata payload
-    ) external {
+    function callContract(string calldata destinationChain, string calldata contractAddress, bytes calldata payload)
+        external
+    {
         lastDestinationChain = destinationChain;
         lastContractAddress = contractAddress;
         lastPayload = payload;
@@ -118,9 +114,7 @@ contract BridgeLayerTest is Test {
     function testSetAdapterRevertsForNonOwner() public {
         address attacker = address(0xA11CE);
         vm.prank(attacker);
-        vm.expectRevert(
-            abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, attacker)
-        );
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, attacker));
         bridgeLayer.setAxelarAdapter(address(adapter));
     }
 
@@ -183,9 +177,7 @@ contract AxelarBridgeAdapterTest is Test {
 
         address attacker = address(0xDEAD);
         vm.prank(attacker);
-        vm.expectRevert(
-            abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, attacker)
-        );
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, attacker));
         adapter.setDestination(DST_CHAIN_ID, AXELAR_CHAIN, RECEIVER);
     }
 

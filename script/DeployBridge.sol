@@ -21,10 +21,7 @@ contract DeployBridge is Script {
         address expectedOwner = vm.envAddress("OWNER");
         address deployerAddr = vm.addr(deployerKey);
 
-        require(
-            deployerAddr == expectedOwner,
-            "Deploy: OWNER env must match PRIVATE_KEY address"
-        );
+        require(deployerAddr == expectedOwner, "Deploy: OWNER env must match PRIVATE_KEY address");
 
         address gateway = vm.envAddress("AXELAR_GATEWAY");
         address gasService = vm.envAddress("AXELAR_GAS_SERVICE");
@@ -39,10 +36,7 @@ contract DeployBridge is Script {
 
         vm.stopBroadcast();
 
-        deployed = DeployedContracts({
-            bridgeLayer: address(bridgeLayer),
-            axelarAdapter: address(adapter)
-        });
+        deployed = DeployedContracts({bridgeLayer: address(bridgeLayer), axelarAdapter: address(adapter)});
 
         console2.log("AxelarBridgeAdapter deployed at", deployed.axelarAdapter);
         console2.log("BridgeLayer deployed at", deployed.bridgeLayer);

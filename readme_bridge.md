@@ -50,7 +50,7 @@ Dokumen ini menjelaskan cara kerja lapisan bridge di folder `src/bridge`, bagaim
    ```
 2. Lengkapi nilai berikut:
     - `OWNER` & `PRIVATE_KEY`: alamat/kunci wallet deployer (jangan pernah commit nilai asli).
-    - `RPC_URL`: endpoint RPC chain sumber yang akan menjalankan BridgeLayer dan adapter.
+    - `RPC_URL`: endpoint RPC chain sumber (misal: `https://rpc.sepolia.mantle.xyz`).
     - `ETHERSCAN_API_KEY`: API key untuk Etherscan/Basescan/Mantlescan (dipakai saat verifikasi).
     - `AXELAR_GATEWAY` & `AXELAR_GAS_SERVICE`: alamat resmi Axelar untuk chain sumber.
     - `DST_CHAIN_IDS`: daftar chainId tujuan yang ingin diaktifkan (pisahkan dengan koma).
@@ -58,48 +58,23 @@ Dokumen ini menjelaskan cara kerja lapisan bridge di folder `src/bridge`, bagaim
    - `AXELAR_DEST_RECEIVERS`: alamat kontrak receiver dalam format string (berurutan dengan daftar chainId).
 3. Setelah proses deploy, simpan alamat hasil deploy pada `AXELAR_ADAPTER_ADDRESS` dan `BRIDGE_LAYER_ADDRESS` supaya dapat digunakan ulang oleh tooling atau skrip otomasi.
 
-### Langkah Deploy Manual
+### Deployment via Script
 
-1. Export variabel `.env` ke shell (opsional).
-   ```shell
-   set -a && source .env && set +a      # bash/zsh
-   ```
-2. Deploy `AxelarBridgeAdapter` dengan parameter gateway & gas service:
-   ```shell
-   forge create src/bridge/adapters/AxelarBridgeAdapter.sol:AxelarBridgeAdapter \
-     --rpc-url $RPC_URL \
-     --private-key $PRIVATE_KEY \
-     --constructor-args $AXELAR_GATEWAY $AXELAR_GAS_SERVICE
-   ```
-   Catat alamat kontrak dan perbarui `AXELAR_ADAPTER_ADDRESS` di `.env`.
-3. Deploy `BridgeLayer`:
-   ```shell
-   forge create src/bridge/BridgeLayer.sol:BridgeLayer \
-     --rpc-url $RPC_URL \
-     --private-key $PRIVATE_KEY
-   ```
-   Catat alamatnya pada `BRIDGE_LAYER_ADDRESS`.
-4. Kaitkan adapter dengan bridge layer:
-   ```shell
-   cast send $BRIDGE_LAYER_ADDRESS \
-     "setAxelarAdapter(address)" $AXELAR_ADAPTER_ADDRESS \
-     --rpc-url $RPC_URL --private-key $PRIVATE_KEY
-   ```
-5. Daftarkan destinasi lintas chain. Contoh skrip shell untuk mengiterasi pasangan konfigurasi:
-   ```shell
-   IFS=',' read -r -a chain_ids <<< "$DST_CHAIN_IDS"
-   IFS=',' read -r -a chain_names <<< "$AXELAR_CHAIN_NAMES"
-   IFS=',' read -r -a receivers <<< "$AXELAR_DEST_RECEIVERS"
+Gunakan script `script/DeployBridge.sol` untuk men-deploy kontrak `BridgeLayer` dan `AxelarBridgeAdapter`, serta mengkonfigurasi destinasi awal secara otomatis.
 
-   for idx in "${!chain_ids[@]}"; do
-     cast send $AXELAR_ADAPTER_ADDRESS \
-       "setDestination(uint256,string,string)" \
-       "${chain_ids[$idx]}" "${chain_names[$idx]}" "${receivers[$idx]}" \
-       --rpc-url $RPC_URL --private-key $PRIVATE_KEY
-   done
+1. Pastikan `.env` sudah terisi lengkap (termasuk `DST_CHAIN_IDS` dsb jika ingin auto-config).
+2. Jalankan perintah berikut:
+   ```shell
+   forge script script/DeployBridge.sol --rpc-url $RPC_URL --broadcast
    ```
-   Pastikan event `DestinationSet` tercatat untuk seluruh kombinasi.
-6. (Opsional) Tambahkan adapter lain dengan mengimplementasikan `IBridgeAdapter` dan memanggil `setAxelarAdapter` lagi bila ingin mengganti rute default.
+   Jika berhasil, script akan mencetak alamat kontrak yang dideploy:
+   ```text
+   AxelarBridgeAdapter deployed at 0x...
+   BridgeLayer deployed at 0x...
+   ```
+3. Update nilai `AXELAR_ADAPTER_ADDRESS` dan `BRIDGE_LAYER_ADDRESS` di `.env` Anda dengan alamat tersebut untuk keperluan verifikasi atau interaksi selanjutnya.
+
+> **Catatan:** Script ini akan otomatis melakukan `setAxelarAdapter` pada BridgeLayer dan `setDestination` pada adapter jika variabel env terkait tersedia.
 
 ### Verifikasi Kontrak (Etherscan/Basescan)
 

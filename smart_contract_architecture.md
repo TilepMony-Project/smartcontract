@@ -1,10 +1,10 @@
 # Dokumentasi Arsitektur Smart Contract: Multi-Protocol DeFi App (Mantle Ecosystem)
 
-Dokumen ini menjelaskan desain teknis untuk aplikasi DeFi yang mengintegrasikan fitur Lending (Multi-Protocol), Swapping, dan Bridging dalam satu ekosistem terpadu, dikhususkan untuk ekosistem **Mantle Network**.
+Dokumen ini menjelaskan desain teknis untuk aplikasi DeFi yang mengintegrasikan fitur Yield Routing (Smart Router), Swapping, dan Bridging dalam satu ekosistem terpadu, dikhususkan untuk ekosistem **Mantle Network**.
 
 ## Diagram Arsitektur Sistem
 
-Berikut adalah diagram arsitektur yang menggambarkan hubungan antar komponen dengan protokol-protokol spesifik di Mantle. Diagram ini telah diperbarui untuk memastikan kompatibilitas syntax dan kejelasan alur.
+Berikut adalah diagram arsitektur yang menggambarkan hubungan antar komponen dengan protokol-protokol spesifik di Mantle. Diagram ini menggunakan konsep **Smart Router** untuk fleksibilitas maksimal user.
 
 ```mermaid
 ---
@@ -27,8 +27,8 @@ flowchart TB
         ProtoMeth["MethLab <br>(Fixed Rate/Term)"]
         ProtoAurelius["Aurelius Finance <br>(CDP &amp; Lending)"]
   end
- subgraph subGraph3["Vault & Yield Layer"]
-        Vault["Vault Contract <br>(ERC4626 Standard)"]
+ subgraph subGraph3["Yield Routing Layer"]
+        Router["Smart Yield Router <br>(Non-Custodial)"]
         Adapters
         subGraph2
   end
@@ -66,12 +66,12 @@ flowchart TB
     User(("User")) --> Wallet["User Wallet"]
     Wallet --> Frontend["Frontend DApp"]
     Frontend --> Controller
-    Controller -- "1. Deposit/Withdraw" --> Vault
+    Controller -- "1. Yield Deposit" --> Router
     Controller -- "2. Swap Request" --> SwapRouter
     Controller -- "3. Bridge Request" --> BridgeMgr
     Controller -.-> Registry
-    Vault -- Delegate Call --> AdptInit & AdptMeth & AdptAurelius
-    Vault -.-> Oracle & Math
+    Router -- Delegate Call --> AdptInit & AdptMeth & AdptAurelius
+    Router -.-> Oracle & Math
     AdptInit <==> ProtoInit
     AdptMeth <==> ProtoMeth
     AdptAurelius <==> ProtoAurelius
@@ -83,14 +83,14 @@ flowchart TB
     Axelar -.-> ChainArb
     L0 -.-> ChainOp
     Controller -- Collect Fees --> FeeMgr
-    Vault -- Yield Fees --> FeeMgr
+    Router -- Yield Fees (if any) --> FeeMgr
     FeeMgr --> RewardDist
     Gov -- Admin Control --> Controller
     Gov -- Update Params --> FeeMgr
 
      Controller:::core
      Registry:::core
-     Vault:::vault
+     Router:::vault
      AdptInit:::vault
      AdptMeth:::vault
      AdptAurelius:::vault
@@ -113,30 +113,31 @@ flowchart TB
 ## Detail Komponen (Mantle Ecosystem)
 
 ### A. Main Contract (Controller)
-*   **Peran:** Sentral otorisasi dan orkestrasi.
+*   **Peran:** Sentral otorisasi dan orkestrasi (Facade).
 *   **Fungsi Detail:**
-    *   `depositToVault(token, amount, strategy)`: Memverifikasi input, menarik token dari user, dan meneruskannya ke Vault yang sesuai.
+    *   `depositToYield(token, amount, protocol)`: Mengarahkan user ke Smart Router untuk deposit ke protokol pilihan.
     *   `executeSwap(tokenIn, tokenOut, amount, route)`: Memanggil SwapRouter untuk eksekusi trade.
     *   `bridgeAsset(token, amount, destChain, bridgeProvider)`: Menginisiasi transaksi cross-chain via BridgeManager.
     *   **Keamanan:** Menerapkan `nonReentrant` dan `onlyOwner`/`onlyGovernance` untuk fungsi administratif.
 
-### B. Vault & Yield Layer (Mantle Top 3)
-Layer ini mengelola aset user dan mendistribusikannya ke protokol yield terbaik di Mantle menggunakan standar **ERC-4626**.
+### B. Yield Routing Layer (Smart Router)
+Layer ini menggantikan konsep "Vault" tradisional. Dana tidak disimpan di kontrak ini, melainkan langsung diteruskan ke protokol tujuan (Non-Custodial).
 
+*   **Smart Yield Router:**
+    *   **Fungsi:** Menerima aset dari user, memanggil adapter yang sesuai, dan mengirimkan bukti deposit (aToken/cToken) kembali ke user.
+    *   **Direct Ownership:** User memegang kendali penuh atas aset mereka di protokol lending.
+    *   **Fleksibilitas:** User bisa memilih protokol mana (INIT, MethLab, Aurelius) yang ingin digunakan.
+
+**Adapter Protokol (Mantle Top 3):**
 1.  **INIT Capital Adapter:**
     *   *Protokol:* **INIT Capital** (Liquidity Hook Money Market).
-    *   *Mekanisme:* Adapter berinteraksi dengan `InitCore` contract.
-    *   *Strategi:* Menggunakan "Liquidity Hooks" untuk meminjamkan aset (Lending) atau melakukan strategi looping (Leveraged Yield) jika diizinkan oleh risk manager.
     *   *Integrasi:* `deposit()` memanggil `InitCore.supply()`, `withdraw()` memanggil `InitCore.withdraw()`.
 2.  **MethLab Adapter:**
     *   *Protokol:* **MethLab** (Liquidation-free, Oracle-less Lending).
-    *   *Mekanisme:* Berinteraksi dengan pasar Fixed Rate/Fixed Term.
-    *   *Strategi:* Mengunci aset untuk periode tertentu (term) untuk mendapatkan yield tetap yang lebih tinggi, menghilangkan risiko fluktuasi suku bunga.
-    *   *Integrasi:* Adapter mengelola NFT posisi (jika ada) atau pembukuan internal untuk jatuh tempo (maturity date).
+    *   *Integrasi:* Adapter mengelola interaksi dengan pasar Fixed Rate/Fixed Term.
 3.  **Aurelius Adapter:**
     *   *Protokol:* **Aurelius Finance** (CDP & Lending).
-    *   *Mekanisme:* Minting stablecoin (misal: aUSD) dengan kolateral aset user atau lending langsung ke pool.
-    *   *Strategi:* Memaksimalkan efisiensi modal dengan menjadikan aset user sebagai kolateral untuk minting stablecoin yang kemudian di-farm kembali (Looping), atau supply ke lending pool konvensional.
+    *   *Integrasi:* Supply collateral untuk minting stablecoin atau lending pool.
 
 ### C. Swap/DEX Layer (Mantle Top 3)
 Layer ini menangani pertukaran aset dengan likuiditas terdalam di Mantle.
@@ -177,67 +178,61 @@ Layer ini menghubungkan aplikasi dengan chain lain (Omnichain).
 
 ## 📋 PART 1: PROJECT STRUCTURE (Foundry)
 
-Berikut adalah struktur proyek yang disesuaikan dengan framework **Foundry** (Solidity-centric).
+Berikut adalah struktur proyek yang disesuaikan dengan konsep **Smart Router**.
 
 ```text
 textdefi-aggregator/
-├── src/                                # Source contracts (pengganti 'contracts/')
+├── src/                                # Source contracts
 │   ├── core/
-│   │   ├── MainController.sol          # Main entry point
+│   │   ├── MainController.sol          # Main entry point (Facade)
 │   │   ├── AdapterRegistry.sol         # Adapter management
 │   │   └── AccessControl.sol           # RBAC
 │   │
-│   ├── bridge/
-│   │   ├── BridgeLayer.sol             # Bridge orchestration
+│   ├── yield/                          # Yield Routing Layer
+│   │   ├── SmartYieldRouter.sol        # Router Logic (Non-Custodial)
 │   │   ├── adapters/
-│   │   │   ├── StargateBridgeAdapter.sol
-│   │   │   ├── AxelarBridgeAdapter.sol
-│   │   │   ├── LayerZeroBridgeAdapter.sol
-│   │   │   └── IBridgeAdapter.sol
+│   │   │   ├── InitCapitalAdapter.sol
+│   │   │   ├── MethLabAdapter.sol
+│   │   │   ├── AureliusAdapter.sol
+│   │   │   └── BaseAdapter.sol         # Abstract base adapter
+│   │   └── IYieldAdapter.sol
 │   │
 │   ├── swap/
 │   │   ├── SwapLayer.sol               # Swap orchestration
 │   │   ├── adapters/
 │   │   │   ├── MerchantMoeAdapter.sol
 │   │   │   ├── VertexAdapter.sol
-│   │   │   ├── FusionXAdapter.sol
-│   │   │   └── ISwapAdapter.sol
+│   │   │   └── FusionXAdapter.sol
+│   │   └── ISwapAdapter.sol
 │   │
-│   ├── yield/
-│   │   ├── YieldLayer.sol              # Yield orchestration
+│   ├── bridge/
+│   │   ├── BridgeLayer.sol             # Bridge orchestration
 │   │   ├── adapters/
-│   │   │   ├── InitCapitalAdapter.sol
-│   │   │   ├── MethLabAdapter.sol
-│   │   │   ├── AureliusAdapter.sol
-│   │   │   ├── BaseAdapter.sol         # Abstract base adapter
-│   │   │   └── IYieldAdapter.sol
-│   │   └── vaults/
-│   │       ├── BaseVault.sol
-│   │       ├── USDCVault.sol
-│   │       ├── ETHVault.sol
-│   │       └── MixedVault.sol
+│   │   │   ├── StargateBridgeAdapter.sol
+│   │   │   ├── AxelarBridgeAdapter.sol
+│   │   │   └── LayerZeroBridgeAdapter.sol
+│   │   └── IBridgeAdapter.sol
 │   │
 │   └── interfaces/                     # Shared interfaces
 │       ├── IERC20.sol
 │       └── IAggregator.sol
 │
-├── test/                               # Tests (Foundry uses .t.sol)
+├── test/                               # Tests
 │   ├── unit/
-│   │   ├── Bridge.t.sol
+│   │   ├── Router.t.sol                # Test Smart Router
 │   │   ├── Swap.t.sol
-│   │   └── Yield.t.sol
+│   │   └── Bridge.t.sol
 │   │
 │   └── integration/
-│       ├── BridgeSwap.t.sol
-│       ├── SwapYield.t.sol
+│       ├── RouterSwap.t.sol
 │       └── FullFlow.t.sol
 │
-├── script/                             # Deployment scripts (Foundry uses .s.sol)
+├── script/                             # Deployment scripts
 │   ├── Deploy.s.sol
 │   ├── RegisterAdapters.s.sol
 │   └── Verify.s.sol
 │
-├── lib/                                # Dependencies (OpenZeppelin, forge-std, etc.)
+├── lib/                                # Dependencies
 ├── foundry.toml                        # Foundry configuration
 ├── .env.example
 └── README.md

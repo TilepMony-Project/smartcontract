@@ -7,42 +7,35 @@ import {ISwapAggregator} from "./interfaces/ISwapAggregator.sol";
 import {Ownable} from "openzeppelin-contracts/contracts/access/Ownable.sol";
 
 contract SwapAggregator is ISwapAggregator, Ownable {
-  mapping(address => bool) isTrustedAdapter;
+    mapping(address => bool) isTrustedAdapter;
 
-  constructor() Ownable(msg.sender) {}
-  
-  function addTrustedAdapter(address _adapterAddress) external onlyOwner {
-    require(_adapterAddress != address(0), "SwapAggregator: zero address");
-    isTrustedAdapter[_adapterAddress] = true;
-  }
+    constructor() Ownable(msg.sender) {}
 
-  function removeTrustedAdapter(address _adapterAddress) external onlyOwner {
-    isTrustedAdapter[_adapterAddress] = false;
-  }
+    function addTrustedAdapter(address _adapterAddress) external onlyOwner {
+        require(_adapterAddress != address(0), "SwapAggregator: zero address");
+        isTrustedAdapter[_adapterAddress] = true;
+    }
 
-  function swapWithProvider(
-    address adapterAddress,
-    address tokenIn,
-    address tokenOut,
-    uint256 amountIn,
-    uint256 minAmountOut,
-    address to
-  ) external returns (uint256 amountOut) {
-    require(isTrustedAdapter[adapterAddress], "SwapAggregator: untrusted adapter");
+    function removeTrustedAdapter(address _adapterAddress) external onlyOwner {
+        isTrustedAdapter[_adapterAddress] = false;
+    }
 
-    bool pullSuccess = IERC20(tokenIn).transferFrom(msg.sender, address(this), amountIn);
-    require(pullSuccess, "SwapAggregator: failed to pull token from user to aggregator");
+    function swapWithProvider(
+        address adapterAddress,
+        address tokenIn,
+        address tokenOut,
+        uint256 amountIn,
+        uint256 minAmountOut,
+        address to
+    ) external returns (uint256 amountOut) {
+        require(isTrustedAdapter[adapterAddress], "SwapAggregator: untrusted adapter");
 
-    bool approveSuccess = IERC20(tokenIn).approve(adapterAddress, amountIn);
-    require(approveSuccess, "SwapAggregator: failed to approve adapter to spend the tokens");
+        bool pullSuccess = IERC20(tokenIn).transferFrom(msg.sender, address(this), amountIn);
+        require(pullSuccess, "SwapAggregator: failed to pull token from user to aggregator");
 
-    amountOut = ISwapAdapter(adapterAddress).swap(
-      tokenIn,
-      tokenOut,
-      amountIn,
-      minAmountOut,
-      address(this),
-      to
-    );
-  }
+        bool approveSuccess = IERC20(tokenIn).approve(adapterAddress, amountIn);
+        require(approveSuccess, "SwapAggregator: failed to approve adapter to spend the tokens");
+
+        amountOut = ISwapAdapter(adapterAddress).swap(tokenIn, tokenOut, amountIn, minAmountOut, address(this), to);
+    }
 }

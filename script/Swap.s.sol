@@ -19,50 +19,53 @@ contract SwapScript is Script {
     VertexAdapter public vertexAdapter;
     SwapAggregator public swapAggregator;
 
-    function run() public returns (
-      address fusionXRouterAddress,
-      address fusionXAdapterAddress,
-      address merchantMoeRouterAddress,
-      address merchantMoeAdapterAddress,
-      address vertexRouterAddress,
-      address vertexAdapterAddress,
-      address swapAggregatorAddress
-    ) {
-      vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
+    function run()
+        public
+        returns (
+            address fusionXRouterAddress,
+            address fusionXAdapterAddress,
+            address merchantMoeRouterAddress,
+            address merchantMoeAdapterAddress,
+            address vertexRouterAddress,
+            address vertexAdapterAddress,
+            address swapAggregatorAddress
+        )
+    {
+        vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
 
-      fusionXRouter = new FusionXRouter();
-      fusionXAdapter = new FusionXAdapter(address(fusionXRouter));
+        fusionXRouter = new FusionXRouter();
+        fusionXAdapter = new FusionXAdapter(address(fusionXRouter));
 
-      console.log("FusionX router deployed at:", address(fusionXRouter));
-      console.log("FusionX adapter deployed at:", address(fusionXAdapter));
+        console.log("FusionX router deployed at:", address(fusionXRouter));
+        console.log("FusionX adapter deployed at:", address(fusionXAdapter));
 
-      merchantMoeRouter = new MerchantMoeRouter();
-      merchantMoeAdapter = new MerchantMoeAdapter(address(merchantMoeRouter));
+        merchantMoeRouter = new MerchantMoeRouter();
+        merchantMoeAdapter = new MerchantMoeAdapter(address(merchantMoeRouter));
 
-      console.log("MerchantMoe router deployed at:", address(merchantMoeRouter));
-      console.log("MerchantMoe adapter deployed at:", address(merchantMoeAdapter));
+        console.log("MerchantMoe router deployed at:", address(merchantMoeRouter));
+        console.log("MerchantMoe adapter deployed at:", address(merchantMoeAdapter));
 
-      vertexRouter = new VertexRouter();
-      vertexAdapter = new VertexAdapter(address(vertexRouter));
+        vertexRouter = new VertexRouter();
+        vertexAdapter = new VertexAdapter(address(vertexRouter));
 
-      console.log("Vertex router deployed at:", address(vertexRouter));
-      console.log("Vertex adapter deployed at:", address(vertexAdapter));
+        console.log("Vertex router deployed at:", address(vertexRouter));
+        console.log("Vertex adapter deployed at:", address(vertexAdapter));
 
-      swapAggregator = new SwapAggregator();
-      swapAggregator.addTrustedAdapter(address(fusionXAdapter));
-      swapAggregator.addTrustedAdapter(address(merchantMoeAdapter));
-      swapAggregator.addTrustedAdapter(address(vertexAdapter));
+        swapAggregator = new SwapAggregator();
+        swapAggregator.addTrustedAdapter(address(fusionXAdapter));
+        swapAggregator.addTrustedAdapter(address(merchantMoeAdapter));
+        swapAggregator.addTrustedAdapter(address(vertexAdapter));
 
-      console.log("Swap aggregator deployed at:", address(swapAggregator));
+        console.log("Swap aggregator deployed at:", address(swapAggregator));
 
-      fusionXRouterAddress = address(fusionXRouter);
-      fusionXAdapterAddress = address(fusionXAdapter);
-      merchantMoeRouterAddress = address(merchantMoeRouter);
-      merchantMoeAdapterAddress = address(merchantMoeAdapter);
-      vertexRouterAddress = address(vertexRouter);
-      vertexAdapterAddress = address(vertexAdapter);
-      swapAggregatorAddress = address(swapAggregator);
+        fusionXRouterAddress = address(fusionXRouter);
+        fusionXAdapterAddress = address(fusionXAdapter);
+        merchantMoeRouterAddress = address(merchantMoeRouter);
+        merchantMoeAdapterAddress = address(merchantMoeAdapter);
+        vertexRouterAddress = address(vertexRouter);
+        vertexAdapterAddress = address(vertexAdapter);
+        swapAggregatorAddress = address(swapAggregator);
 
-      vm.stopBroadcast();
+        vm.stopBroadcast();
     }
 }

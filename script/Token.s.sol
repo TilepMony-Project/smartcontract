@@ -10,18 +10,18 @@ contract TokenScript is Script {
     MockUSDT public usdt;
 
     function run() public returns (address idrxAddress, address usdtAddress) {
-      vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
+        vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
 
-      idrx = new MockIDRX();
-      idrxAddress = address(idrx);
+        idrx = new MockIDRX();
+        idrxAddress = address(idrx);
 
-      console.log("IDRX deployed at:", address(idrx));
+        console.log("IDRX deployed at:", address(idrx));
 
-      usdt = new MockUSDT();
-      usdtAddress = address(usdt);
+        usdt = new MockUSDT();
+        usdtAddress = address(usdt);
 
-      console.log("USDT deployed at:", address(usdt));
+        console.log("USDT deployed at:", address(usdt));
 
-      vm.stopBroadcast();
+        vm.stopBroadcast();
     }
 }

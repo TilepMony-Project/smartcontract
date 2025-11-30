@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-TEXT=$(cat <<EOF
+TEXT=$(
+  cat <<EOF
 ❌ *Smart Contract Test Failed!*
 
 Repository: [${GITHUB_REPOSITORY}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY})
@@ -20,4 +21,4 @@ curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" 
   -d message_thread_id="${TELEGRAM_TOPIC_ID}" \
   -d text="$TEXT_URLENCODED" \
   -d parse_mode="Markdown" \
-  -d disable_web_page_preview="trueo
+  -d disable_web_page_preview="true"

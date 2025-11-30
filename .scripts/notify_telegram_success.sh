@@ -1,22 +1,23 @@
 #!/usr/bin/env bash
 
-TEXT=$(cat <<'EOF'
+TEXT=$(cat <<EOF
 ✅ *Smart Contract Test Passed!*
 
-Repository: [${{ github.repository }}](${{ github.server_url }}/${{ github.repository }})
-Branch: [${{ github.ref_name }}](${{ github.server_url }}/${{ github.repository }}/tree/${{ github.ref_name }})
-By: [${{ github.actor }}](${{ github.server_url }}/${{ github.actor }})
+Repository: [${GITHUB_REPOSITORY}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY})
+Branch: [${GITHUB_REF_NAME}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/tree/${GITHUB_REF_NAME})
+By: [${GITHUB_ACTOR}](${GITHUB_SERVER_URL}/${GITHUB_ACTOR})
 
 *Commits:*
-${{ env.COMMITS }}
+${COMMITS}
 
-🧩 [View Workflow Logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+🧩 [View Workflow Logs](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})
 EOF
 )
 TEXT_URLENCODED=$(echo "$TEXT" | jq -s -R -r @uri)
-curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
-  -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \1
-  -d message_thread_id="${{ secrets.TELEGRAM_TOPIC_ID }}" \
+
+curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+  -d chat_id="${TELEGRAM_CHAT_ID}" \
+  -d message_thread_id="${TELEGRAM_TOPIC_ID}" \
   -d text="$TEXT_URLENCODED" \
   -d parse_mode="Markdown" \
-  -d disable_web_page_preview="true"
+  -d disable_web_page_preview="trueo

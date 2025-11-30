@@ -44,18 +44,39 @@ jobs:
 
       - name: Get Commit Messages
         id: get_commits
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_EVENT_COMMITS: ${{ toJSON(github.event.commits) }}
         run: |
           chmod +x ./.scripts/get_commit_message.sh
           ./.scripts/get_commit_message.sh
 
       - name: Notify Telegram (Success)
         if: success()
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_SERVER_URL: ${{ github.server_url }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_TOPIC_ID: ${{ secrets.TELEGRAM_TOPIC_ID }}
         run: |
           chmod +x ./.scripts/notify_telegram_success.sh
           ./.scripts/notify_telegram_success.sh
 
       - name: Notify Telegram (Failed)
         if: failure()
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_SERVER_URL: ${{ github.server_url }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_TOPIC_ID: ${{ secrets.TELEGRAM_TOPIC_ID }}
         run: |
           chmod +x ./.scripts/notify_telegram_failed.sh
           ./.scripts/notify_telegram_failed.sh

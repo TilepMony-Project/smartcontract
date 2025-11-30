@@ -37,7 +37,7 @@ contract MerchantMoeAdapterTest is Test {
     tokenA.approve(address(adapter), AMOUNT_IN);
   }
 
-  function test_SuccesfulSwap_AdapterLogic() public {
+  function test_SuccessfulSwap_AdapterLogic() public {
     uint256 aggregatorTokenABalanceBefore = tokenA.balanceOf(AGGREGATOR);
     uint256 adapterTokenABalanceBefore = tokenA.balanceOf(address(adapter));
     uint256 receiverTokenBBalanceBefore = tokenB.balanceOf(RECEIVER);

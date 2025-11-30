@@ -38,7 +38,7 @@ contract FusionXRouterTest is Test {
     assertEq(router.exchangeRate(address(tokenA), address(tokenB)), EXCHANGE_RATE);
   }
 
-  function test_SuccesfulSwap_RouterLogic() public {
+  function test_SuccessfulSwap_RouterLogic() public {
     uint256 adapterTokenABalanceBefore = tokenA.balanceOf(ADAPTER);
     uint256 routerTokenBBalanceBefore = tokenB.balanceOf(address(router));
     uint256 receiverTokenBBalanceBefore = tokenB.balanceOf(RECEIVER);

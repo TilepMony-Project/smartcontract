@@ -3,7 +3,7 @@ pragma solidity ^0.8.30;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ISwapAdapter} from "../interfaces/ISwapAdapter.sol";
-import {ISwapRouter} from "../interfaces//ISwapRouter.sol";
+import {ISwapRouter} from "../interfaces/ISwapRouter.sol";
 
 contract MerchantMoeAdapter is ISwapAdapter {
   ISwapRouter public immutable ROUTER;
@@ -21,7 +21,7 @@ contract MerchantMoeAdapter is ISwapAdapter {
     address to
   ) external returns (uint amountOut) {
     bool pullSuccess = IERC20(tokenIn).transferFrom(from, address(this), amountIn);
-    require(pullSuccess, "MerchantMoeAdapter: failed to pull token from to adapter");
+    require(pullSuccess, "MerchantMoeAdapter: failed to pull token from aggregator to adapter");
 
     bool approveSuccess = IERC20(tokenIn).approve(address(ROUTER), amountIn);
     require(approveSuccess, "MerchantMoeAdapter: failed to approve router to spend the tokens");

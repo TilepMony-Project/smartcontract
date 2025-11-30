@@ -113,66 +113,71 @@ flowchart TB
 ## Detail Komponen (Mantle Ecosystem)
 
 ### A. Main Contract (Controller)
-*   **Peran:** Sentral otorisasi dan orkestrasi (Facade).
-*   **Fungsi Detail:**
-    *   `depositToYield(token, amount, protocol)`: Mengarahkan user ke Smart Router untuk deposit ke protokol pilihan.
-    *   `executeSwap(tokenIn, tokenOut, amount, route)`: Memanggil SwapRouter untuk eksekusi trade.
-    *   `bridgeAsset(token, amount, destChain, bridgeProvider)`: Menginisiasi transaksi cross-chain via BridgeManager.
-    *   **Keamanan:** Menerapkan `nonReentrant` dan `onlyOwner`/`onlyGovernance` untuk fungsi administratif.
+
+- **Peran:** Sentral otorisasi dan orkestrasi (Facade).
+- **Fungsi Detail:**
+  - `depositToYield(token, amount, protocol)`: Mengarahkan user ke Smart Router untuk deposit ke protokol pilihan.
+  - `executeSwap(tokenIn, tokenOut, amount, route)`: Memanggil SwapRouter untuk eksekusi trade.
+  - `bridgeAsset(token, amount, destChain, bridgeProvider)`: Menginisiasi transaksi cross-chain via BridgeManager.
+  - **Keamanan:** Menerapkan `nonReentrant` dan `onlyOwner`/`onlyGovernance` untuk fungsi administratif.
 
 ### B. Yield Routing Layer (Smart Router)
+
 Layer ini menggantikan konsep "Vault" tradisional. Dana tidak disimpan di kontrak ini, melainkan langsung diteruskan ke protokol tujuan (Non-Custodial).
 
-*   **Smart Yield Router:**
-    *   **Fungsi:** Menerima aset dari user, memanggil adapter yang sesuai, dan mengirimkan bukti deposit (aToken/cToken) kembali ke user.
-    *   **Direct Ownership:** User memegang kendali penuh atas aset mereka di protokol lending.
-    *   **Fleksibilitas:** User bisa memilih protokol mana (INIT, MethLab, Aurelius) yang ingin digunakan.
+- **Smart Yield Router:**
+  - **Fungsi:** Menerima aset dari user, memanggil adapter yang sesuai, dan mengirimkan bukti deposit (aToken/cToken) kembali ke user.
+  - **Direct Ownership:** User memegang kendali penuh atas aset mereka di protokol lending.
+  - **Fleksibilitas:** User bisa memilih protokol mana (INIT, MethLab, Aurelius) yang ingin digunakan.
 
 **Adapter Protokol (Mantle Top 3):**
+
 1.  **INIT Capital Adapter:**
-    *   *Protokol:* **INIT Capital** (Liquidity Hook Money Market).
-    *   *Integrasi:* `deposit()` memanggil `InitCore.supply()`, `withdraw()` memanggil `InitCore.withdraw()`.
+    - _Protokol:_ **INIT Capital** (Liquidity Hook Money Market).
+    - _Integrasi:_ `deposit()` memanggil `InitCore.supply()`, `withdraw()` memanggil `InitCore.withdraw()`.
 2.  **MethLab Adapter:**
-    *   *Protokol:* **MethLab** (Liquidation-free, Oracle-less Lending).
-    *   *Integrasi:* Adapter mengelola interaksi dengan pasar Fixed Rate/Fixed Term.
+    - _Protokol:_ **MethLab** (Liquidation-free, Oracle-less Lending).
+    - _Integrasi:_ Adapter mengelola interaksi dengan pasar Fixed Rate/Fixed Term.
 3.  **Aurelius Adapter:**
-    *   *Protokol:* **Aurelius Finance** (CDP & Lending).
-    *   *Integrasi:* Supply collateral untuk minting stablecoin atau lending pool.
+    - _Protokol:_ **Aurelius Finance** (CDP & Lending).
+    - _Integrasi:_ Supply collateral untuk minting stablecoin atau lending pool.
 
 ### C. Swap/DEX Layer (Mantle Top 3)
+
 Layer ini menangani pertukaran aset dengan likuiditas terdalam di Mantle.
 
 1.  **Merchant Moe Adapter:**
-    *   *Protokol:* **Merchant Moe** (DEX Utama Mantle).
-    *   *Teknis:* Menggunakan Router V2/V3 standard.
-    *   *Keunggulan:* Likuiditas terdalam untuk pair native Mantle (MNT, mETH). Adapter akan mencari jalur dengan slippage terendah.
+    - _Protokol:_ **Merchant Moe** (DEX Utama Mantle).
+    - _Teknis:_ Menggunakan Router V2/V3 standard.
+    - _Keunggulan:_ Likuiditas terdalam untuk pair native Mantle (MNT, mETH). Adapter akan mencari jalur dengan slippage terendah.
 2.  **Vertex Adapter:**
-    *   *Protokol:* **Vertex Protocol**.
-    *   *Teknis:* Interaksi dengan on-chain clearinghouse atau smart contract Vertex.
-    *   *Keunggulan:* Eksekusi ultra-cepat dan efisien modal (cross-margin). Cocok untuk swap size besar atau hedging strategi.
+    - _Protokol:_ **Vertex Protocol**.
+    - _Teknis:_ Interaksi dengan on-chain clearinghouse atau smart contract Vertex.
+    - _Keunggulan:_ Eksekusi ultra-cepat dan efisien modal (cross-margin). Cocok untuk swap size besar atau hedging strategi.
 3.  **FusionX Adapter:**
-    *   *Protokol:* **FusionX**.
-    *   *Teknis:* V3 Concentrated Liquidity AMM.
-    *   *Keunggulan:* Efisiensi modal tinggi untuk stable pair (misal USDC/USDT) atau correlated assets (ETH/mETH).
+    - _Protokol:_ **FusionX**.
+    - _Teknis:_ V3 Concentrated Liquidity AMM.
+    - _Keunggulan:_ Efisiensi modal tinggi untuk stable pair (misal USDC/USDT) atau correlated assets (ETH/mETH).
 
 ### D. Bridge Layer (Top 3 Interoperability)
+
 Layer ini menghubungkan aplikasi dengan chain lain (Omnichain).
 
 1.  **Stargate Adapter:**
-    *   *Protokol:* **Stargate**.
-    *   *Teknologi:* LayerZero messaging + Unified Liquidity Pools.
-    *   *Flow:* User deposit di Chain A -> Stargate lock -> Pesan via LayerZero -> Stargate Chain B release aset native.
-    *   *Keunggulan:* Instant finality (probabilistik) dan menerima aset native (bukan wrapped token).
+    - _Protokol:_ **Stargate**.
+    - _Teknologi:_ LayerZero messaging + Unified Liquidity Pools.
+    - _Flow:_ User deposit di Chain A -> Stargate lock -> Pesan via LayerZero -> Stargate Chain B release aset native.
+    - _Keunggulan:_ Instant finality (probabilistik) dan menerima aset native (bukan wrapped token).
 2.  **Axelar Adapter:**
-    *   *Protokol:* **Axelar**.
-    *   *Teknologi:* Gateway Contract & Axelar Network (Cosmos SDK chain).
-    *   *Flow:* Memanggil `callContractWithToken` pada Axelar Gateway. Validator Axelar memverifikasi dan merelay pesan ke chain tujuan.
-    *   *Keunggulan:* General Message Passing (GMP) yang sangat kuat, bisa memanggil fungsi smart contract di chain tujuan (misal: Deposit ke Vault di chain lain dalam 1 klik).
+    - _Protokol:_ **Axelar**.
+    - _Teknologi:_ Gateway Contract & Axelar Network (Cosmos SDK chain).
+    - _Flow:_ Memanggil `callContractWithToken` pada Axelar Gateway. Validator Axelar memverifikasi dan merelay pesan ke chain tujuan.
+    - _Keunggulan:_ General Message Passing (GMP) yang sangat kuat, bisa memanggil fungsi smart contract di chain tujuan (misal: Deposit ke Vault di chain lain dalam 1 klik).
 3.  **LayerZero Adapter:**
-    *   *Protokol:* **LayerZero**.
-    *   *Teknologi:* Ultra Light Nodes (ULN) & Relayers.
-    *   *Flow:* Mengirim payload pesan via `endpoint.send()`. Aplikasi mendefinisikan logic eksekusi di sisi penerima (`lzReceive`).
-    *   *Keunggulan:* Standar industri untuk interoperabilitas, sangat fleksibel untuk membangun OFT (Omnichain Fungible Token).
+    - _Protokol:_ **LayerZero**.
+    - _Teknologi:_ Ultra Light Nodes (ULN) & Relayers.
+    - _Flow:_ Mengirim payload pesan via `endpoint.send()`. Aplikasi mendefinisikan logic eksekusi di sisi penerima (`lzReceive`).
+    - _Keunggulan:_ Standar industri untuk interoperabilitas, sangat fleksibel untuk membangun OFT (Omnichain Fungible Token).
 
 ---
 
@@ -197,13 +202,24 @@ textdefi-aggregator/
 │   │   │   └── BaseAdapter.sol         # Abstract base adapter
 │   │   └── IYieldAdapter.sol
 │   │
-│   ├── swap/
-│   │   ├── SwapLayer.sol               # Swap orchestration
+│   ├── swap/                           # Swap orchestration
+│   │   ├── SwapAggregator.sol
 │   │   ├── adapters/
+│   │   │   ├── FusionXAdapter.sol
 │   │   │   ├── MerchantMoeAdapter.sol
 │   │   │   ├── VertexAdapter.sol
-│   │   │   └── FusionXAdapter.sol
-│   │   └── ISwapAdapter.sol
+│   │   ├── interfaces/
+│   │   │   └── ISwapAdapter.sol
+│   │   │   └── ISwapAggregator.sol
+│   │   │   └── ISwapRouter.sol
+│   │   └── routers/
+│   │       ├── FusionXRouter.sol
+│   │       ├── MerchantMoeRouter.sol
+│   │       └── VertexRouter.sol
+│   │
+│   ├── token/                          # Stablecoin tokens
+│   │   ├── MockIDRX.sol
+│   │   └── MockUSDT.sol
 │   │
 │   ├── bridge/
 │   │   ├── BridgeLayer.sol             # Bridge orchestration
@@ -235,5 +251,6 @@ textdefi-aggregator/
 ├── lib/                                # Dependencies
 ├── foundry.toml                        # Foundry configuration
 ├── .env.example
+├── Makefile
 └── README.md
 ```

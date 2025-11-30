@@ -8,12 +8,12 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 contract MockToken is ERC20, Ownable {
     uint8 private _decimalsValue;
 
-    constructor(string memory name_, string memory symbol_, uint8 decimals_, uint256 initialSupply)
+    constructor(string memory name_, string memory symbol_, uint8 decimals_, uint256 initialSupply, address initialOwner)
         ERC20(name_, symbol_)
-        Ownable(msg.sender)
+        Ownable(initialOwner)
     {
         _decimalsValue = decimals_;
-        _mint(msg.sender, initialSupply);
+        _mint(initialOwner, initialSupply);
     }
 
     function decimals() public view override returns (uint8) {

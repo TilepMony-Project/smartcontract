@@ -12,3 +12,5 @@ docs/
 
 # Dotenv file
 .env
+
+/bridge-test/node_modules

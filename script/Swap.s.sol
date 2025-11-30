@@ -19,18 +19,7 @@ contract SwapScript is Script {
     VertexAdapter public vertexAdapter;
     SwapAggregator public swapAggregator;
 
-    function run()
-        public
-        returns (
-            address fusionXRouterAddress,
-            address fusionXAdapterAddress,
-            address merchantMoeRouterAddress,
-            address merchantMoeAdapterAddress,
-            address vertexRouterAddress,
-            address vertexAdapterAddress,
-            address swapAggregatorAddress
-        )
-    {
+    function run() public {
         vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
 
         fusionXRouter = new FusionXRouter();
@@ -57,14 +46,6 @@ contract SwapScript is Script {
         swapAggregator.addTrustedAdapter(address(vertexAdapter));
 
         console.log("Swap aggregator deployed at:", address(swapAggregator));
-
-        fusionXRouterAddress = address(fusionXRouter);
-        fusionXAdapterAddress = address(fusionXAdapter);
-        merchantMoeRouterAddress = address(merchantMoeRouter);
-        merchantMoeAdapterAddress = address(merchantMoeAdapter);
-        vertexRouterAddress = address(vertexRouter);
-        vertexAdapterAddress = address(vertexAdapter);
-        swapAggregatorAddress = address(swapAggregator);
 
         vm.stopBroadcast();
     }

@@ -1,4 +1,4 @@
-.PHONY: build run dry-run size
+.PHONY: build size rpc run deploy deploy-token deploy-swap
 
 GREEN := \033[0;32m
 CYAN := \033[0;36m
@@ -18,28 +18,40 @@ build:
 	@echo "$(CYAN)🔧 [BUILD] Compiling smart contract...$(RESET)"
 	@forge build
 
+size:
+	@clear
+	@echo "$(GREEN)📄 [REPORT] Generate size report...$(RESET)"
+	@forge build --sizes
+
+rpc:
+	@clear
+	@echo "$(GREEN)🛜 [REPORT] RPC url: ${RPC_URL}$(RESET)"
+
 run:
 	@clear
-	@echo "$(CYAN)🚚 [DEPLOY] Deploying smart contract...$(RESET)"
-	@forge script script/Token.s.sol \
-		--rpc-url $(RPC_URL) \
-		--broadcast -vvv \
-		--verify \
-		--etherscan-api-key $(API_KEY) \
-		&& forge script script/Swap.s.sol \
-		--rpc-url $(RPC_URL) \
-		--broadcast -vvv \
-		--verify \
-		--etherscan-api-key $(API_KEY)
-
-dry-run:
-	@clear
-	@echo "Dry running with ${RPC_URL}"
+	@echo "$(YELLOW)🧷 [RUN] Start dry running...$(RESET)"
 	@forge script script/Token.s.sol \
 		--rpc-url $(RPC_URL) -vvv \
 		&& forge script script/Swap.s.sol \
 		--rpc-url $(RPC_URL) -vvv
 
-size:
+deploy-token:
+	@echo "$(CYAN)🚚 [DEPLOY] Deploying token contract...$(RESET)"
+	@forge script script/Token.s.sol \
+		--rpc-url $(RPC_URL) \
+		--broadcast -vvv \
+		--verify \
+		--etherscan-api-key $(API_KEY)
+
+deploy-swap:
+	@echo "$(CYAN)🚚 [DEPLOY] Deploying swap contract...$(RESET)"
+	@forge script script/Swap.s.sol \
+		--rpc-url $(RPC_URL) \
+		--broadcast -vvv \
+		--verify \
+		--etherscan-api-key $(API_KEY)
+
+deploy:
 	@clear
-	@forge build --sizes
+	@$(MAKE) deploy-token
+	@$(MAKE) deploy-swap

@@ -12,7 +12,7 @@ import {MockInitCore} from "../src/yield/mocks/initCore/MockInitCore.sol";
 import {MockLendingPool} from "../src/yield/mocks/initCore/MockLendingPool.sol";
 import {MockComet} from "../src/yield/mocks/MockComet.sol";
 
-contract DeployTestnet is Script {
+contract YieldScript is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address idrx = vm.envAddress("IDRX_ADDRESS");

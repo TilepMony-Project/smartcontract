@@ -7,7 +7,7 @@ import {Ownable} from "openzeppelin-contracts/contracts/access/Ownable.sol";
 /// @title MockIDRX
 /// @notice Simple mock IDR-pegged stablecoin used for bridge demos.
 contract MockIDRX is ERC20, Ownable {
-    constructor() ERC20("Mock IDRX", "MIDRX") Ownable(msg.sender) {}
+    constructor() ERC20("Mock IDRX", "MocIDRX") Ownable(msg.sender) {}
 
     function decimals() public view virtual override returns (uint8) {
         return 6;

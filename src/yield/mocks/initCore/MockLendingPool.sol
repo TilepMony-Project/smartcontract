@@ -25,28 +25,18 @@ contract MockLendingPool is ILendingPool, IERC20 {
     }
 
     // ERC20 Mock implementation for shares
-    function transfer(
-        address recipient,
-        uint256 amount
-    ) external override returns (bool) {
+    function transfer(address recipient, uint256 amount) external override returns (bool) {
         balanceOf[msg.sender] -= amount;
         balanceOf[recipient] += amount;
         return true;
     }
 
-    function approve(
-        address spender,
-        uint256 amount
-    ) external override returns (bool) {
+    function approve(address spender, uint256 amount) external override returns (bool) {
         allowance[msg.sender][spender] = amount;
         return true;
     }
 
-    function transferFrom(
-        address sender,
-        address recipient,
-        uint256 amount
-    ) external override returns (bool) {
+    function transferFrom(address sender, address recipient, uint256 amount) external override returns (bool) {
         allowance[sender][msg.sender] -= amount;
         balanceOf[sender] -= amount;
         balanceOf[recipient] += amount;

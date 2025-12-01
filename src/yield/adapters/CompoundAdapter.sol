@@ -16,7 +16,11 @@ contract CompoundAdapter is IYieldAdapter {
         address token,
         uint256 amount,
         bytes calldata /* data */
-    ) external override returns (uint256) {
+    )
+        external
+        override
+        returns (uint256)
+    {
         // 1. Transfer tokens from Router to this adapter
         IERC20(token).transferFrom(msg.sender, address(this), amount);
 
@@ -35,7 +39,11 @@ contract CompoundAdapter is IYieldAdapter {
         address token,
         uint256 amount,
         bytes calldata /* data */
-    ) external override returns (uint256) {
+    )
+        external
+        override
+        returns (uint256)
+    {
         // 1. Withdraw from Compound V3 to this adapter
         IComet(comet).withdraw(token, amount);
 
@@ -45,19 +53,13 @@ contract CompoundAdapter is IYieldAdapter {
         return amount;
     }
 
-    function getProtocolInfo()
-        external
-        pure
-        override
-        returns (ProtocolInfo memory)
-    {
-        return
-            ProtocolInfo({
-                name: "Compound Finance",
-                description: "Algorithmic Money Market",
-                website: "https://compound.finance",
-                icon: "compound_icon_url"
-            });
+    function getProtocolInfo() external pure override returns (ProtocolInfo memory) {
+        return ProtocolInfo({
+            name: "Compound Finance",
+            description: "Algorithmic Money Market",
+            website: "https://compound.finance",
+            icon: "compound_icon_url"
+        });
     }
 
     function getSupplyAPY() external view returns (uint256) {

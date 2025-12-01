@@ -39,9 +39,7 @@ contract YieldScript is Script {
         MockInitCore initCore = new MockInitCore();
         console.log("MockInitCore deployed at:", address(initCore));
 
-        InitCapitalAdapter initAdapter = new InitCapitalAdapter(
-            address(initCore)
-        );
+        InitCapitalAdapter initAdapter = new InitCapitalAdapter(address(initCore));
         console.log("InitCapitalAdapter deployed at:", address(initAdapter));
 
         _setupInitCapital(initAdapter, idrx, "IDRX");
@@ -58,55 +56,31 @@ contract YieldScript is Script {
         vm.stopBroadcast();
     }
 
-    function _setupMethLab(
-        MethLabAdapter adapter,
-        address token,
-        string memory symbol
-    ) internal {
+    function _setupMethLab(MethLabAdapter adapter, address token, string memory symbol) internal {
         MockMethLab vault = new MockMethLab(token);
         adapter.setVault(token, address(vault));
-        console.log(
-            string.concat("MethLab Vault ", symbol, " deployed at:"),
-            address(vault)
-        );
+        console.log(string.concat("MethLab Vault ", symbol, " deployed at:"), address(vault));
 
         // Optional: Set default APY (e.g., 10%)
         vault.setAPY(10e16);
     }
 
-    function _setupInitCapital(
-        InitCapitalAdapter adapter,
-        address token,
-        string memory symbol
-    ) internal {
+    function _setupInitCapital(InitCapitalAdapter adapter, address token, string memory symbol) internal {
         MockLendingPool pool = new MockLendingPool(token);
         adapter.setPool(token, address(pool));
-        console.log(
-            string.concat("InitCapital Pool ", symbol, " deployed at:"),
-            address(pool)
-        );
+        console.log(string.concat("InitCapital Pool ", symbol, " deployed at:"), address(pool));
 
         // Optional: Set default Supply Rate
         // 5% APY approx 1.58e9 per second
         pool.setSupplyRate(1585489599);
     }
 
-    function _setupCompound(
-        YieldRouter router,
-        address token,
-        string memory symbol
-    ) internal {
+    function _setupCompound(YieldRouter router, address token, string memory symbol) internal {
         MockComet comet = new MockComet(token);
         CompoundAdapter adapter = new CompoundAdapter(address(comet));
         router.setAdapterWhitelist(address(adapter), true);
 
-        console.log(
-            string.concat("Compound Comet ", symbol, " deployed at:"),
-            address(comet)
-        );
-        console.log(
-            string.concat("Compound Adapter ", symbol, " deployed at:"),
-            address(adapter)
-        );
+        console.log(string.concat("Compound Comet ", symbol, " deployed at:"), address(comet));
+        console.log(string.concat("Compound Adapter ", symbol, " deployed at:"), address(adapter));
     }
 }

@@ -36,12 +36,7 @@ contract CompoundAdapterTest is Test {
         uint256 amount = 100 * 1e6;
 
         vm.prank(user);
-        uint256 amountOut = router.deposit(
-            address(adapter),
-            address(token),
-            amount,
-            ""
-        );
+        uint256 amountOut = router.deposit(address(adapter), address(token), amount, "");
 
         console.log("Amount Deposited:", amount);
         console.log("Amount Out:", amountOut);
@@ -60,6 +55,7 @@ contract CompoundAdapterTest is Test {
         console.log("Compound APY:", apy);
         assertGt(apy, 0);
     }
+
     function testWithdraw() public {
         console.log("--- Testing Compound Withdraw ---");
         uint256 amount = 100 * 1e6;
@@ -68,24 +64,13 @@ contract CompoundAdapterTest is Test {
         router.deposit(address(adapter), address(token), amount, "");
 
         console.log("Initial Deposit Amount:", amount);
-        console.log(
-            "Comet Balance After Deposit:",
-            token.balanceOf(address(comet))
-        );
+        console.log("Comet Balance After Deposit:", token.balanceOf(address(comet)));
 
         vm.prank(user);
-        uint256 amountReceived = router.withdraw(
-            address(adapter),
-            address(token),
-            amount,
-            ""
-        );
+        uint256 amountReceived = router.withdraw(address(adapter), address(token), amount, "");
 
         console.log("Amount Received:", amountReceived);
-        console.log(
-            "Comet Balance After Withdraw:",
-            token.balanceOf(address(comet))
-        );
+        console.log("Comet Balance After Withdraw:", token.balanceOf(address(comet)));
 
         assertEq(amountReceived, amount);
         // Comet balance should decrease by amount

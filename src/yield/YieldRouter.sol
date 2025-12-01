@@ -9,18 +9,10 @@ contract YieldRouter {
     error TransferFailed();
 
     event Deposited(
-        address indexed user,
-        address indexed adapter,
-        address indexed token,
-        uint256 amount,
-        uint256 amountOut
+        address indexed user, address indexed adapter, address indexed token, uint256 amount, uint256 amountOut
     );
     event Withdrawn(
-        address indexed user,
-        address indexed adapter,
-        address indexed token,
-        uint256 amount,
-        uint256 amountReceived
+        address indexed user, address indexed adapter, address indexed token, uint256 amount, uint256 amountReceived
     );
     event AdapterWhitelisted(address indexed adapter, bool status);
 
@@ -33,8 +25,9 @@ contract YieldRouter {
     }
 
     modifier onlyWhitelisted(address adapter) {
-        if (!isAdapterWhitelisted[adapter])
+        if (!isAdapterWhitelisted[adapter]) {
             revert AdapterNotWhitelisted(adapter);
+        }
         _;
     }
 
@@ -42,10 +35,7 @@ contract YieldRouter {
         owner = msg.sender;
     }
 
-    function setAdapterWhitelist(
-        address adapter,
-        bool status
-    ) external onlyOwner {
+    function setAdapterWhitelist(address adapter, bool status) external onlyOwner {
         isAdapterWhitelisted[adapter] = status;
         emit AdapterWhitelisted(adapter, status);
     }
@@ -54,18 +44,13 @@ contract YieldRouter {
      * @notice Routes user deposit to the specific adapter.
      * @dev User must approve this contract to spend `token`.
      */
-    function deposit(
-        address adapter,
-        address token,
-        uint256 amount,
-        bytes calldata data
-    ) external onlyWhitelisted(adapter) returns (uint256) {
+    function deposit(address adapter, address token, uint256 amount, bytes calldata data)
+        external
+        onlyWhitelisted(adapter)
+        returns (uint256)
+    {
         // 1. Transfer tokens from user to this router
-        bool success = IERC20(token).transferFrom(
-            msg.sender,
-            address(this),
-            amount
-        );
+        bool success = IERC20(token).transferFrom(msg.sender, address(this), amount);
         if (!success) revert TransferFailed();
 
         // 2. Approve adapter to spend tokens
@@ -93,12 +78,11 @@ contract YieldRouter {
     /**
      * @notice Routes user withdrawal from the specific adapter.
      */
-    function withdraw(
-        address adapter,
-        address token,
-        uint256 amount,
-        bytes calldata data
-    ) external onlyWhitelisted(adapter) returns (uint256) {
+    function withdraw(address adapter, address token, uint256 amount, bytes calldata data)
+        external
+        onlyWhitelisted(adapter)
+        returns (uint256)
+    {
         // 1. User must transfer their LP/Receipt tokens to this router first (if applicable),
         // OR approve this router to burn/spend them.
         // This flow depends heavily on whether the user holds an LP token or if the position is tracked internally.
@@ -110,11 +94,7 @@ contract YieldRouter {
         // or the share amount, and the adapter handles the logic.
 
         // Call adapter withdraw
-        uint256 amountReceived = IYieldAdapter(adapter).withdraw(
-            token,
-            amount,
-            data
-        );
+        uint256 amountReceived = IYieldAdapter(adapter).withdraw(token, amount, data);
 
         // Transfer underlying back to user
         bool success = IERC20(token).transfer(msg.sender, amountReceived);

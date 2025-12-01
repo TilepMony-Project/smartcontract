@@ -16,11 +16,7 @@ interface IYieldAdapter {
      * @param data Additional data required by the protocol (optional).
      * @return amountOut The amount of receipt tokens or liquidity received.
      */
-    function deposit(
-        address token,
-        uint256 amount,
-        bytes calldata data
-    ) external returns (uint256 amountOut);
+    function deposit(address token, uint256 amount, bytes calldata data) external returns (uint256 amountOut);
 
     /**
      * @notice Withdraws assets from the underlying protocol.
@@ -29,11 +25,7 @@ interface IYieldAdapter {
      * @param data Additional data required by the protocol (optional).
      * @return amountReceived The actual amount of underlying tokens received.
      */
-    function withdraw(
-        address token,
-        uint256 amount,
-        bytes calldata data
-    ) external returns (uint256 amountReceived);
+    function withdraw(address token, uint256 amount, bytes calldata data) external returns (uint256 amountReceived);
 
     /**
      * @notice Returns metadata about the protocol.

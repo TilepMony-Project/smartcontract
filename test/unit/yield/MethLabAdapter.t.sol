@@ -39,26 +39,15 @@ contract MethLabAdapterTest is Test {
         uint256 amount = 1000 * 1e6;
 
         console.log("User Balance Before:", usdc.balanceOf(user));
-        console.log(
-            "Vault Balance Before:",
-            usdc.balanceOf(address(methLabVault))
-        );
+        console.log("Vault Balance Before:", usdc.balanceOf(address(methLabVault)));
 
         vm.prank(user);
-        uint256 shares = router.deposit(
-            address(adapter),
-            address(usdc),
-            amount,
-            ""
-        );
+        uint256 shares = router.deposit(address(adapter), address(usdc), amount, "");
 
         console.log("Deposited Amount:", amount);
         console.log("Shares Received:", shares);
         console.log("User Balance After:", usdc.balanceOf(user));
-        console.log(
-            "Vault Balance After:",
-            usdc.balanceOf(address(methLabVault))
-        );
+        console.log("Vault Balance After:", usdc.balanceOf(address(methLabVault)));
 
         assertEq(usdc.balanceOf(address(methLabVault)), amount);
         // Initial exchange rate is 1:1, but scaled by 1e18 in mock
@@ -71,12 +60,7 @@ contract MethLabAdapterTest is Test {
         uint256 amount = 1000 * 1e6;
 
         vm.prank(user);
-        uint256 shares = router.deposit(
-            address(adapter),
-            address(usdc),
-            amount,
-            ""
-        );
+        uint256 shares = router.deposit(address(adapter), address(usdc), amount, "");
 
         console.log("Initial Deposit Shares:", shares);
 
@@ -89,12 +73,7 @@ contract MethLabAdapterTest is Test {
         console.log("Withdrawing Shares:", withdrawShares);
 
         vm.prank(user);
-        uint256 assetsReceived = router.withdraw(
-            address(adapter),
-            address(usdc),
-            withdrawShares,
-            ""
-        );
+        uint256 assetsReceived = router.withdraw(address(adapter), address(usdc), withdrawShares, "");
 
         console.log("Assets Received:", assetsReceived);
         console.log("User Balance After Withdraw:", usdc.balanceOf(user));
@@ -127,12 +106,7 @@ contract MethLabAdapterTest is Test {
         uint256 amount = 1000 * 1e6;
 
         vm.prank(user);
-        uint256 shares = router.deposit(
-            address(adapter),
-            address(usdc),
-            amount,
-            ""
-        );
+        uint256 shares = router.deposit(address(adapter), address(usdc), amount, "");
 
         // Lock funds for 1 day
         uint256 unlockTime = block.timestamp + 1 days;
@@ -141,9 +115,7 @@ contract MethLabAdapterTest is Test {
 
         // Try to withdraw (should fail)
         vm.prank(user);
-        vm.expectRevert(
-            abi.encodeWithSelector(MockMethLab.FundsLocked.selector, unlockTime)
-        );
+        vm.expectRevert(abi.encodeWithSelector(MockMethLab.FundsLocked.selector, unlockTime));
         router.withdraw(address(adapter), address(usdc), shares, "");
         console.log("Withdraw failed as expected (Funds Locked)");
 
@@ -153,12 +125,7 @@ contract MethLabAdapterTest is Test {
 
         // Withdraw should succeed now
         vm.prank(user);
-        uint256 assetsReceived = router.withdraw(
-            address(adapter),
-            address(usdc),
-            shares,
-            ""
-        );
+        uint256 assetsReceived = router.withdraw(address(adapter), address(usdc), shares, "");
         console.log("Withdraw success after unlock. Assets:", assetsReceived);
         assertEq(assetsReceived, amount); // 1:1 since no yield simulated here
     }

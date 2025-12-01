@@ -60,4 +60,35 @@ contract CompoundAdapterTest is Test {
         console.log("Compound APY:", apy);
         assertGt(apy, 0);
     }
+    function testWithdraw() public {
+        console.log("--- Testing Compound Withdraw ---");
+        uint256 amount = 100 * 1e6;
+
+        vm.prank(user);
+        router.deposit(address(adapter), address(token), amount, "");
+
+        console.log("Initial Deposit Amount:", amount);
+        console.log(
+            "Comet Balance After Deposit:",
+            token.balanceOf(address(comet))
+        );
+
+        vm.prank(user);
+        uint256 amountReceived = router.withdraw(
+            address(adapter),
+            address(token),
+            amount,
+            ""
+        );
+
+        console.log("Amount Received:", amountReceived);
+        console.log(
+            "Comet Balance After Withdraw:",
+            token.balanceOf(address(comet))
+        );
+
+        assertEq(amountReceived, amount);
+        // Comet balance should decrease by amount
+        assertEq(token.balanceOf(address(comet)), 10000 * 1e6); // Back to initial liquidity
+    }
 }

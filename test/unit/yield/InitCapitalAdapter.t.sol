@@ -37,6 +37,10 @@ contract InitCapitalAdapterTest is Test {
 
         vm.prank(user);
         token.approve(address(router), type(uint256).max);
+
+        // Approve InitCore to spend LendingPool's tokens (for withdraw mock)
+        vm.prank(address(lendingPool));
+        token.approve(address(initCore), type(uint256).max);
     }
 
     function testDeposit() public {
@@ -58,6 +62,40 @@ contract InitCapitalAdapterTest is Test {
         assertEq(amountOut, 100 ether);
         // Token should be in LendingPool
         assertEq(token.balanceOf(address(lendingPool)), amount + 10000 * 1e6);
+    }
+
+    function testWithdraw() public {
+        console.log("--- Testing Init Capital Withdraw ---");
+        uint256 amount = 100 * 1e6;
+
+        vm.prank(user);
+        router.deposit(address(adapter), address(token), amount, "");
+
+        console.log("Initial Deposit Amount:", amount);
+        console.log(
+            "LendingPool Balance After Deposit:",
+            token.balanceOf(address(lendingPool))
+        );
+
+        vm.prank(user);
+        // Withdraw 100 ether shares (which is what we got from deposit mock)
+        uint256 amountReceived = router.withdraw(
+            address(adapter),
+            address(token),
+            100 ether,
+            ""
+        );
+
+        console.log("Amount Received:", amountReceived);
+        console.log(
+            "LendingPool Balance After Withdraw:",
+            token.balanceOf(address(lendingPool))
+        );
+
+        // MockInitCore returns 100 * 10**decimals (which is amount)
+        assertEq(amountReceived, amount);
+        // LendingPool balance should decrease by amount
+        assertEq(token.balanceOf(address(lendingPool)), 10000 * 1e6); // Back to initial liquidity
     }
 
     function testAPY() public {

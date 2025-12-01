@@ -52,4 +52,9 @@ contract MockLendingPool is ILendingPool, IERC20 {
         balanceOf[recipient] += amount;
         return true;
     }
+
+    function mint(address to, uint256 amount) external {
+        balanceOf[to] += amount;
+        totalSupply += amount;
+    }
 }

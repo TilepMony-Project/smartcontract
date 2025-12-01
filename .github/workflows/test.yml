@@ -52,7 +52,7 @@ jobs:
           ./.scripts/get_commit_message.sh
 
       - name: Notify Telegram (Success)
-        if: success()
+        if: ${{ success() && github.ref == 'refs/heads/main' }}
         env:
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_SERVER_URL: ${{ github.server_url }}
@@ -67,7 +67,7 @@ jobs:
           ./.scripts/notify_telegram_success.sh
 
       - name: Notify Telegram (Failed)
-        if: failure()
+        if: ${{ failure() && github.ref == 'refs/heads/main' }}
         env:
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_SERVER_URL: ${{ github.server_url }}

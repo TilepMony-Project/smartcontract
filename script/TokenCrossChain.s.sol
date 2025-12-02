@@ -25,7 +25,7 @@ contract TokenCrossChain is Script {
         string memory path = string.concat(root, "/chains.json");
         string memory json = vm.readFile(path);
         string memory chainIdStr = vm.toString(chainId);
-        
+
         // Read the prefix from chains.json based on chainId
         // Note: stdJson requires the key to start with "."
         string memory chainPrefix = json.readString(string.concat(".", chainIdStr));
@@ -36,11 +36,11 @@ contract TokenCrossChain is Script {
         // Construct env vars based on prefix
         string memory gatewayKey = string.concat(chainPrefix, "_AXELAR_GATEWAY");
         string memory gasServiceKey = string.concat(chainPrefix, "_AXELAR_GAS_SERVICE");
-        
+
         // Read from env
         address gateway = vm.envAddress(gatewayKey);
         address gasService = vm.envAddress(gasServiceKey);
-        
+
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
@@ -52,11 +52,7 @@ contract TokenCrossChain is Script {
         vm.stopBroadcast();
     }
 
-    function _deployAndInit(
-        string memory tokenVariant,
-        address gateway,
-        address gasService
-    ) internal {
+    function _deployAndInit(string memory tokenVariant, address gateway, address gasService) internal {
         console.log(string.concat("Deploying token variant: ", tokenVariant));
 
         bytes32 salt = keccak256(bytes(string.concat("CrossChainToken_V1", tokenVariant)));

@@ -12,15 +12,7 @@ contract CompoundAdapter is IYieldAdapter {
         comet = _comet;
     }
 
-    function deposit(
-        address token,
-        uint256 amount,
-        bytes calldata /* data */
-    )
-        external
-        override
-        returns (uint256)
-    {
+    function deposit(address token, uint256 amount, bytes calldata /* data */ ) external override returns (uint256) {
         // 1. Transfer tokens from Router to this adapter
         IERC20(token).transferFrom(msg.sender, address(this), amount);
 
@@ -35,15 +27,7 @@ contract CompoundAdapter is IYieldAdapter {
         return amount;
     }
 
-    function withdraw(
-        address token,
-        uint256 amount,
-        bytes calldata /* data */
-    )
-        external
-        override
-        returns (uint256)
-    {
+    function withdraw(address token, uint256 amount, bytes calldata /* data */ ) external override returns (uint256) {
         // 1. Withdraw from Compound V3 to this adapter
         IComet(comet).withdraw(token, amount);
 

@@ -13,16 +13,14 @@ contract MockUSDCCrossChain is ERC20, AxelarExecutable {
     uint8 private _customDecimals;
     bool public initialized;
 
-    constructor()
-        ERC20("Mock USDC", "mUSDC")
-    {
+    constructor() ERC20("Mock USDC", "mUSDC") {
         _customDecimals = 6;
     }
 
     function initAxelar(address gateway_, address gasReceiver_) external {
         require(!initialized, "Already initialized");
         require(gasReceiver_ != address(0), "ERC20CrossChain: zero gas");
-        
+
         _setGateway(gateway_);
         gasService = IAxelarGasService(gasReceiver_);
         initialized = true;
@@ -41,11 +39,10 @@ contract MockUSDCCrossChain is ERC20, AxelarExecutable {
     /// @param destinationChain Destination chain name (example: "base-sepolia")
     /// @param destinationContract Address of the ERC20CrossChain contract on the destination chain
     /// @param amount Amount of tokens being transferred
-    function transferRemote(
-        string calldata destinationChain,
-        address destinationContract,
-        uint256 amount
-    )public payable {
+    function transferRemote(string calldata destinationChain, address destinationContract, uint256 amount)
+        public
+        payable
+    {
         require(msg.value > 0, "Gas payment is required");
         require(amount > 0, "Amount must be > 0");
         require(destinationContract != address(0), "Invalid destination");
@@ -57,12 +54,8 @@ contract MockUSDCCrossChain is ERC20, AxelarExecutable {
         bytes memory payload = abi.encode(msg.sender, amount);
 
         // Pay cross-chain gas (in tests, this is only recorded by MockGasService)
-        gasService.payNativeGasForContractCall{ value: msg.value }(
-            address(this),
-            destinationChain,
-            _toString(destinationContract),
-            payload,
-            msg.sender
+        gasService.payNativeGasForContractCall{value: msg.value}(
+            address(this), destinationChain, _toString(destinationContract), payload, msg.sender
         );
 
         gateway.callContract(destinationChain, _toString(destinationContract), payload);
@@ -94,4 +87,3 @@ contract MockUSDCCrossChain is ERC20, AxelarExecutable {
         return string(str);
     }
 }
-

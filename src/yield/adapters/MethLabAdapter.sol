@@ -16,15 +16,7 @@ contract MethLabAdapter is IYieldAdapter {
         underlyingToVault[token] = vault;
     }
 
-    function deposit(
-        address token,
-        uint256 amount,
-        bytes calldata /* data */
-    )
-        external
-        override
-        returns (uint256)
-    {
+    function deposit(address token, uint256 amount, bytes calldata /* data */ ) external override returns (uint256) {
         address vault = underlyingToVault[token];
         if (vault == address(0)) revert VaultNotFound(token);
 
@@ -39,15 +31,7 @@ contract MethLabAdapter is IYieldAdapter {
         return IMethLab(vault).deposit(amount, address(this));
     }
 
-    function withdraw(
-        address token,
-        uint256 amount,
-        bytes calldata /* data */
-    )
-        external
-        override
-        returns (uint256)
-    {
+    function withdraw(address token, uint256 amount, bytes calldata /* data */ ) external override returns (uint256) {
         address vault = underlyingToVault[token];
         if (vault == address(0)) revert VaultNotFound(token);
 

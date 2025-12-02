@@ -1,0 +1,15 @@
+---
+name: Validate PR Title
+
+on:
+  pull_request:
+    types: [opened, edited, reopened]
+
+jobs:
+  validate-title:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR title
+        uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

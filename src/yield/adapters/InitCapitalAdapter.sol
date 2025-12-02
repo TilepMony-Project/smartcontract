@@ -20,7 +20,15 @@ contract InitCapitalAdapter is IYieldAdapter {
         underlyingToPool[token] = pool;
     }
 
-    function deposit(address token, uint256 amount, bytes calldata /* data */ ) external override returns (uint256) {
+    function deposit(
+        address token,
+        uint256 amount,
+        bytes calldata /* data */
+    )
+        external
+        override
+        returns (uint256)
+    {
         address pool = underlyingToPool[token];
         if (pool == address(0)) revert PoolNotFound(token);
 
@@ -35,7 +43,15 @@ contract InitCapitalAdapter is IYieldAdapter {
         return IInitCore(initCore).mintTo(pool, address(this));
     }
 
-    function withdraw(address token, uint256 amount, bytes calldata /* data */ ) external override returns (uint256) {
+    function withdraw(
+        address token,
+        uint256 amount,
+        bytes calldata /* data */
+    )
+        external
+        override
+        returns (uint256)
+    {
         address pool = underlyingToPool[token];
         if (pool == address(0)) revert PoolNotFound(token);
 

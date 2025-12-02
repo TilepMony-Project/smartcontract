@@ -67,7 +67,10 @@ contract MockUSDTCrossChain is ERC20, AxelarExecutable {
         string calldata, /*sourceChain*/
         string calldata, /*sourceAddress*/
         bytes calldata payload
-    ) internal override {
+    )
+        internal
+        override
+    {
         (address to, uint256 amount) = abi.decode(payload, (address, uint256));
         _mint(to, amount);
     }

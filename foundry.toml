@@ -4,3 +4,12 @@ out = "out"
 libs = ["lib"]
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
+
+fs_permissions = [{ access = "read", path = "./chains.json" }]
+
+[etherscan]
+sepolia = { key = "${ETHERSCAN_API_KEY}" }
+base-sepolia = { key = "${ETHERSCAN_API_KEY}", url = "https://api-sepolia.basescan.org/api" }
+arbitrum-sepolia = { key = "${ETHERSCAN_API_KEY}", url = "https://api-sepolia.arbiscan.io/api" }
+optimism-sepolia = { key = "${ETHERSCAN_API_KEY}" }
+mantle-sepolia = { key = "${ETHERSCAN_API_KEY}", url = "https://api-sepolia.mantlescan.xyz/api" }

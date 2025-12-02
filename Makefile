@@ -1,4 +1,4 @@
-.PHONY: build size rpc run deploy deploy-token deploy-swap
+.PHONY: build size rpc run deploy deploy-token deploy-yield deploy-swap
 
 GREEN := \033[0;32m
 CYAN := \033[0;36m
@@ -36,12 +36,20 @@ run:
 		--rpc-url $(RPC_URL) -vvv
 
 deploy-token:
-	@echo "$(CYAN)🚚 [DEPLOY] Deploying token contract...$(RESET)"
+	@echo "$(CYAN)🚚 [DEPLOY] Deploying yield tokens...$(RESET)"
 	@forge script script/Token.s.sol \
 		--rpc-url $(RPC_URL) \
 		--broadcast -vvv \
 		--verify \
-		--etherscan-api-key $(API_KEY)
+		--etherscan-api-key $(ETHERSCAN_API_KEY)
+
+deploy-yield:
+	@echo "$(CYAN)🚚 [DEPLOY] Deploying yield system...$(RESET)"
+	@forge script script/Yield.s.sol:YieldScript \
+		--rpc-url $(RPC_URL) \
+		--broadcast -vvv \
+		--verify \
+		--etherscan-api-key $(ETHERSCAN_API_KEY)
 
 deploy-swap:
 	@echo "$(CYAN)🚚 [DEPLOY] Deploying swap contract...$(RESET)"
@@ -49,9 +57,10 @@ deploy-swap:
 		--rpc-url $(RPC_URL) \
 		--broadcast -vvv \
 		--verify \
-		--etherscan-api-key $(API_KEY)
+		--etherscan-api-key $(ETHERSCAN_API_KEY)
 
 deploy:
 	@clear
 	@$(MAKE) deploy-token
+	@$(MAKE) deploy-yield
 	@$(MAKE) deploy-swap

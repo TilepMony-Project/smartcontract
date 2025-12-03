@@ -1,4 +1,4 @@
-﻿# Dokumentasi Arsitektur Smart Contract: Multi-Protocol DeFi App (Mantle Ecosystem)
+# Dokumentasi Arsitektur Smart Contract: Multi-Protocol DeFi App (Mantle Ecosystem)
 
 Dokumen ini menjelaskan desain teknis untuk aplikasi DeFi yang mengintegrasikan fitur Yield Routing (Smart Router), Swapping, dan Bridging dalam satu ekosistem terpadu, dikhususkan untuk ekosistem **Mantle Network**.
 
@@ -40,10 +40,12 @@ flowchart TB
  subgraph subGraph5["Swap Layer"]
         SwapRouter["SwapRouter Aggregator"]
         DEXs
- end
+  end
  subgraph subGraph6["Cross-Chain Providers"]
-        Axelar["Axelar <br>(Interoperability & Messaging)"]
- end
+        Stargate["Stargate <br>(Liquidity Transport)"]
+        Axelar["Axelar <br>(Interoperability)"]
+        L0["LayerZero <br>(Omnichain)"]
+  end
  subgraph subGraph7["Destination Chains"]
         ChainEth["Ethereum"]
         ChainArb["Arbitrum"]
@@ -74,10 +76,12 @@ flowchart TB
     AdptMeth <==> ProtoMeth
     AdptAurelius <==> ProtoAurelius
     SwapRouter --> Moe & Vertex & FusionX
+    BridgeMgr -- Route: Stargate --> Stargate
     BridgeMgr -- Route: Axelar --> Axelar
-    Axelar -.-> ChainEth
+    BridgeMgr -- Route: LayerZero --> L0
+    Stargate -.-> ChainEth
     Axelar -.-> ChainArb
-    Axelar -.-> ChainOp
+    L0 -.-> ChainOp
     Controller -- Collect Fees --> FeeMgr
     Router -- Yield Fees (if any) --> FeeMgr
     FeeMgr --> RewardDist
@@ -96,7 +100,9 @@ flowchart TB
      Moe:::ext
      Vertex:::ext
      FusionX:::ext
+     Stargate:::ext
      Axelar:::ext
+     L0:::ext
     classDef core fill:#f9f,stroke:#333,stroke-width:2px
     classDef vault fill:#ccf,stroke:#333,stroke-width:2px
     classDef ext fill:#eee,stroke:#333,stroke-dasharray: 5 5
@@ -153,89 +159,98 @@ Layer ini menangani pertukaran aset dengan likuiditas terdalam di Mantle.
     - _Teknis:_ V3 Concentrated Liquidity AMM.
     - _Keunggulan:_ Efisiensi modal tinggi untuk stable pair (misal USDC/USDT) atau correlated assets (ETH/mETH).
 
-### D. Bridge Layer (Axelar-first & Extensible)
+### D. Bridge Layer (Top 3 Interoperability)
 
-Layer ini menghubungkan aplikasi dengan chain lain (Omnichain). Untuk saat ini hanya **Axelar** yang aktif karena token lintas-chain yang tersedia baru mendukung standar Axelar. Struktur kontrak tetap modular sehingga Stargate atau LayerZero dapat diaktifkan kembali cukup dengan menambahkan router/adapter baru.
+Layer ini menghubungkan aplikasi dengan chain lain (Omnichain).
 
-- **Axelar Adapter (aktif):**
-  - _Teknologi:_ Gateway Contract & Axelar Network (Cosmos SDK chain).
-  - _Flow:_ Memanggil `transferRemote` pada token bergaya Axelar. Validator Axelar memverifikasi dan merelay pesan ke chain tujuan.
-  - _Keunggulan:_ General Message Passing (GMP) yang kuat sehingga bisa menjalankan call lintas chain dalam satu transaksi user.
-- **Penyedia lain (dinonaktifkan sementara):**
-  - Kerangka router/adapter tetap ada melalui `BaseBridgeRouter` dan `BaseBridgeAdapter`.
-  - Saat token/protokol baru siap, cukup menambahkan turunan baru dan mendaftarkannya di registry/FE tanpa mengubah arsitektur inti.
+1.  **Stargate Adapter:**
+    - _Protokol:_ **Stargate**.
+    - _Teknologi:_ LayerZero messaging + Unified Liquidity Pools.
+    - _Flow:_ User deposit di Chain A -> Stargate lock -> Pesan via LayerZero -> Stargate Chain B release aset native.
+    - _Keunggulan:_ Instant finality (probabilistik) dan menerima aset native (bukan wrapped token).
+2.  **Axelar Adapter:**
+    - _Protokol:_ **Axelar**.
+    - _Teknologi:_ Gateway Contract & Axelar Network (Cosmos SDK chain).
+    - _Flow:_ Memanggil `callContractWithToken` pada Axelar Gateway. Validator Axelar memverifikasi dan merelay pesan ke chain tujuan.
+    - _Keunggulan:_ General Message Passing (GMP) yang sangat kuat, bisa memanggil fungsi smart contract di chain tujuan (misal: Deposit ke Vault di chain lain dalam 1 klik).
+3.  **LayerZero Adapter:**
+    - _Protokol:_ **LayerZero**.
+    - _Teknologi:_ Ultra Light Nodes (ULN) & Relayers.
+    - _Flow:_ Mengirim payload pesan via `endpoint.send()`. Aplikasi mendefinisikan logic eksekusi di sisi penerima (`lzReceive`).
+    - _Keunggulan:_ Standar industri untuk interoperabilitas, sangat fleksibel untuk membangun OFT (Omnichain Fungible Token).
 
 ---
 
-## ðŸ“‹ PART 1: PROJECT STRUCTURE (Foundry)
+## 📋 PART 1: PROJECT STRUCTURE (Foundry)
 
 Berikut adalah struktur proyek yang disesuaikan dengan konsep **Smart Router**.
 
 ```text
 textdefi-aggregator/
-â”œâ”€â”€ src/                                # Source contracts
-â”‚   â”œâ”€â”€ core/
-â”‚   â”‚   â”œâ”€â”€ MainController.sol          # Main entry point (Facade)
-â”‚   â”‚   â”œâ”€â”€ AdapterRegistry.sol         # Adapter management
-â”‚   â”‚   â””â”€â”€ AccessControl.sol           # RBAC
-â”‚   â”‚
-â”‚   â”œâ”€â”€ yield/                          # Yield Routing Layer
-â”‚   â”‚   â”œâ”€â”€ SmartYieldRouter.sol        # Router Logic (Non-Custodial)
-â”‚   â”‚   â”œâ”€â”€ adapters/
-â”‚   â”‚   â”‚   â”œâ”€â”€ InitCapitalAdapter.sol
-â”‚   â”‚   â”‚   â”œâ”€â”€ MethLabAdapter.sol
-â”‚   â”‚   â”‚   â”œâ”€â”€ AureliusAdapter.sol
-â”‚   â”‚   â”‚   â””â”€â”€ BaseAdapter.sol         # Abstract base adapter
-â”‚   â”‚   â””â”€â”€ IYieldAdapter.sol
-â”‚   â”‚
-â”‚   â”œâ”€â”€ swap/                           # Swap orchestration
-â”‚   â”‚   â”œâ”€â”€ SwapAggregator.sol
-â”‚   â”‚   â”œâ”€â”€ adapters/
-â”‚   â”‚   â”‚   â”œâ”€â”€ FusionXAdapter.sol
-â”‚   â”‚   â”‚   â”œâ”€â”€ MerchantMoeAdapter.sol
-â”‚   â”‚   â”‚   â”œâ”€â”€ VertexAdapter.sol
-â”‚   â”‚   â”œâ”€â”€ interfaces/
-â”‚   â”‚   â”‚   â””â”€â”€ ISwapAdapter.sol
-â”‚   â”‚   â”‚   â””â”€â”€ ISwapAggregator.sol
-â”‚   â”‚   â”‚   â””â”€â”€ ISwapRouter.sol
-â”‚   â”‚   â””â”€â”€ routers/
-â”‚   â”‚       â”œâ”€â”€ FusionXRouter.sol
-â”‚   â”‚       â”œâ”€â”€ MerchantMoeRouter.sol
-â”‚   â”‚       â””â”€â”€ VertexRouter.sol
-â”‚   â”‚
-â”‚   â”œâ”€â”€ token/                          # Stablecoin tokens
-â”‚   â”‚   â”œâ”€â”€ MockIDRX.sol
-â”‚   â”‚   â””â”€â”€ MockUSDT.sol
-â”‚   â”‚
-â”‚   â”œâ”€â”€ bridge/
-â”‚   â”‚   â”œâ”€â”€ BridgeLayer.sol             # Bridge orchestration
-â”‚   â”‚   â”œâ”€â”€ adapters/
-â”‚   â”‚   â”‚   â”œâ”€â”€ AxelarBridgeAdapter.sol
-â”‚   â”‚   â””â”€â”€ IBridgeAdapter.sol
-â”‚   â”‚
-â”‚   â””â”€â”€ interfaces/                     # Shared interfaces
-â”‚       â”œâ”€â”€ IERC20.sol
-â”‚       â””â”€â”€ IAggregator.sol
-â”‚
-â”œâ”€â”€ test/                               # Tests
-â”‚   â”œâ”€â”€ unit/
-â”‚   â”‚   â”œâ”€â”€ Router.t.sol                # Test Smart Router
-â”‚   â”‚   â”œâ”€â”€ Swap.t.sol
-â”‚   â”‚   â””â”€â”€ Bridge.t.sol
-â”‚   â”‚
-â”‚   â””â”€â”€ integration/
-â”‚       â”œâ”€â”€ RouterSwap.t.sol
-â”‚       â””â”€â”€ FullFlow.t.sol
-â”‚
-â”œâ”€â”€ script/                             # Deployment scripts
-â”‚   â”œâ”€â”€ Deploy.s.sol
-â”‚   â”œâ”€â”€ RegisterAdapters.s.sol
-â”‚   â””â”€â”€ Verify.s.sol
-â”‚
-â”œâ”€â”€ lib/                                # Dependencies
-â”œâ”€â”€ foundry.toml                        # Foundry configuration
-â”œâ”€â”€ .env.example
-â”œâ”€â”€ Makefile
-â””â”€â”€ README.md
+├── src/                                # Source contracts
+│   ├── core/
+│   │   ├── MainController.sol          # Main entry point (Facade)
+│   │   ├── AdapterRegistry.sol         # Adapter management
+│   │   └── AccessControl.sol           # RBAC
+│   │
+│   ├── yield/                          # Yield Routing Layer
+│   │   ├── SmartYieldRouter.sol        # Router Logic (Non-Custodial)
+│   │   ├── adapters/
+│   │   │   ├── InitCapitalAdapter.sol
+│   │   │   ├── MethLabAdapter.sol
+│   │   │   ├── AureliusAdapter.sol
+│   │   │   └── BaseAdapter.sol         # Abstract base adapter
+│   │   └── IYieldAdapter.sol
+│   │
+│   ├── swap/                           # Swap orchestration
+│   │   ├── SwapAggregator.sol
+│   │   ├── adapters/
+│   │   │   ├── FusionXAdapter.sol
+│   │   │   ├── MerchantMoeAdapter.sol
+│   │   │   ├── VertexAdapter.sol
+│   │   ├── interfaces/
+│   │   │   └── ISwapAdapter.sol
+│   │   │   └── ISwapAggregator.sol
+│   │   │   └── ISwapRouter.sol
+│   │   └── routers/
+│   │       ├── FusionXRouter.sol
+│   │       ├── MerchantMoeRouter.sol
+│   │       └── VertexRouter.sol
+│   │
+│   ├── token/                          # Stablecoin tokens
+│   │   ├── MockIDRX.sol
+│   │   └── MockUSDT.sol
+│   │
+│   ├── bridge/
+│   │   ├── BridgeLayer.sol             # Bridge orchestration
+│   │   ├── adapters/
+│   │   │   ├── StargateBridgeAdapter.sol
+│   │   │   ├── AxelarBridgeAdapter.sol
+│   │   │   └── LayerZeroBridgeAdapter.sol
+│   │   └── IBridgeAdapter.sol
+│   │
+│   └── interfaces/                     # Shared interfaces
+│       ├── IERC20.sol
+│       └── IAggregator.sol
+│
+├── test/                               # Tests
+│   ├── unit/
+│   │   ├── Router.t.sol                # Test Smart Router
+│   │   ├── Swap.t.sol
+│   │   └── Bridge.t.sol
+│   │
+│   └── integration/
+│       ├── RouterSwap.t.sol
+│       └── FullFlow.t.sol
+│
+├── script/                             # Deployment scripts
+│   ├── Deploy.s.sol
+│   ├── RegisterAdapters.s.sol
+│   └── Verify.s.sol
+│
+├── lib/                                # Dependencies
+├── foundry.toml                        # Foundry configuration
+├── .env.example
+├── Makefile
+└── README.md
 ```
-

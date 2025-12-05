@@ -3,14 +3,17 @@ pragma solidity ^0.8.19;
 
 import {IComet} from "src/yield/interfaces/IComet.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
+import {ERC20} from "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
 import {Ownable} from "openzeppelin-contracts/contracts/access/Ownable.sol";
 
-contract MockComet is IComet, Ownable {
+contract MockComet is IComet, ERC20, Ownable {
     address public override baseToken;
     uint256 public utilization = 60e16; // 60%
     uint64 public supplyRate = 1000000000; // Mock rate
 
-    constructor(address _baseToken) Ownable(msg.sender) {
+    constructor(
+        address _baseToken
+    ) ERC20("Compound Mock", "cMOCK") Ownable(msg.sender) {
         baseToken = _baseToken;
     }
 
@@ -25,10 +28,12 @@ contract MockComet is IComet, Ownable {
     function supply(address asset, uint256 amount) external override {
         require(asset == baseToken, "Invalid asset");
         IERC20(asset).transferFrom(msg.sender, address(this), amount);
+        _mint(msg.sender, amount);
     }
 
     function withdraw(address asset, uint256 amount) external override {
         require(asset == baseToken, "Invalid asset");
+        _burn(msg.sender, amount);
         IERC20(asset).transfer(msg.sender, amount);
     }
 

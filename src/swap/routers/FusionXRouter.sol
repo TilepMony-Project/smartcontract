@@ -5,6 +5,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ISwapRouter} from "../interfaces/ISwapRouter.sol";
 
 contract FusionXRouter is ISwapRouter {
+    uint256 internal constant RATE_DECIMAL = 1e18;
     mapping(address => mapping(address => uint256)) public exchangeRate;
 
     function setRate(address tokenIn, address tokenOut, uint256 rate) external {
@@ -23,7 +24,7 @@ contract FusionXRouter is ISwapRouter {
         uint256 rate = exchangeRate[tokenIn][tokenOut];
         require(rate > 0, "FusionXRouter: no exchange rate found");
 
-        uint256 amountOut = rate * amountIn;
+        uint256 amountOut = rate * amountIn / RATE_DECIMAL;
         require(amountOut >= minAmountOut, "FusionXRouter: slippage too high");
 
         bool inputSuccess = IERC20(tokenIn).transferFrom(msg.sender, address(this), amountIn);

@@ -24,11 +24,7 @@ contract InitCapitalAdapter is IYieldAdapter {
         address token,
         uint256 amount,
         bytes calldata /* data */
-    )
-        external
-        override
-        returns (uint256)
-    {
+    ) external override returns (uint256, address) {
         address pool = underlyingToPool[token];
         if (pool == address(0)) revert PoolNotFound(token);
 
@@ -40,18 +36,19 @@ contract InitCapitalAdapter is IYieldAdapter {
 
         // 3. Call mintTo on InitCore
         // Shares are minted to this adapter
-        return IInitCore(initCore).mintTo(pool, address(this));
+        uint256 sharesMinted = IInitCore(initCore).mintTo(pool, address(this));
+
+        // 4. Forward shares to Router
+        IERC20(pool).transfer(msg.sender, sharesMinted);
+
+        return (sharesMinted, pool);
     }
 
     function withdraw(
         address token,
         uint256 amount,
         bytes calldata /* data */
-    )
-        external
-        override
-        returns (uint256)
-    {
+    ) external override returns (uint256) {
         address pool = underlyingToPool[token];
         if (pool == address(0)) revert PoolNotFound(token);
 
@@ -65,7 +62,10 @@ contract InitCapitalAdapter is IYieldAdapter {
         IERC20(pool).transfer(pool, amount);
 
         // 2. Call burnTo on InitCore
-        uint256 amountReceived = IInitCore(initCore).burnTo(pool, address(this));
+        uint256 amountReceived = IInitCore(initCore).burnTo(
+            pool,
+            address(this)
+        );
 
         // 3. Transfer underlying tokens to Router (msg.sender)
         IERC20(token).transfer(msg.sender, amountReceived);
@@ -73,13 +73,19 @@ contract InitCapitalAdapter is IYieldAdapter {
         return amountReceived;
     }
 
-    function getProtocolInfo() external pure override returns (ProtocolInfo memory) {
-        return ProtocolInfo({
-            name: "INIT Capital",
-            description: "Liquidity Hook Money Market",
-            website: "https://init.capital",
-            icon: "init_icon_url"
-        });
+    function getProtocolInfo()
+        external
+        pure
+        override
+        returns (ProtocolInfo memory)
+    {
+        return
+            ProtocolInfo({
+                name: "INIT Capital",
+                description: "Liquidity Hook Money Market",
+                website: "https://init.capital",
+                icon: "init_icon_url"
+            });
     }
 
     function getSupplyAPY(address token) external view returns (uint256) {

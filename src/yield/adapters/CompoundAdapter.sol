@@ -16,11 +16,7 @@ contract CompoundAdapter is IYieldAdapter {
         address token,
         uint256 amount,
         bytes calldata /* data */
-    )
-        external
-        override
-        returns (uint256)
-    {
+    ) external override returns (uint256, address) {
         // 1. Transfer tokens from Router to this adapter
         IERC20(token).transferFrom(msg.sender, address(this), amount);
 
@@ -28,22 +24,25 @@ contract CompoundAdapter is IYieldAdapter {
         IERC20(token).approve(comet, amount);
 
         // 3. Supply to Compound V3
+        // In Compound V3 (and our Mock), this mints `comet` tokens (shares) to `address(this)`.
         IComet(comet).supply(token, amount);
 
-        // In Compound V3, you don't get a receipt token (cToken) for the base asset.
-        // Your balance is tracked internally.
-        return amount;
+        // 4. Forward the received shares (Comet Token) to the Router (msg.sender)
+        // Note: The Comet contract address IS the token address for the shares.
+        uint256 sharesBalance = IERC20(comet).balanceOf(address(this));
+        if (sharesBalance > 0) {
+            IERC20(comet).transfer(msg.sender, sharesBalance);
+        }
+
+        // Return amount of underlying deposited and the share token address (comet)
+        return (amount, comet);
     }
 
     function withdraw(
         address token,
         uint256 amount,
         bytes calldata /* data */
-    )
-        external
-        override
-        returns (uint256)
-    {
+    ) external override returns (uint256) {
         // 1. Withdraw from Compound V3 to this adapter
         IComet(comet).withdraw(token, amount);
 
@@ -53,13 +52,19 @@ contract CompoundAdapter is IYieldAdapter {
         return amount;
     }
 
-    function getProtocolInfo() external pure override returns (ProtocolInfo memory) {
-        return ProtocolInfo({
-            name: "Compound Finance",
-            description: "Algorithmic Money Market",
-            website: "https://compound.finance",
-            icon: "compound_icon_url"
-        });
+    function getProtocolInfo()
+        external
+        pure
+        override
+        returns (ProtocolInfo memory)
+    {
+        return
+            ProtocolInfo({
+                name: "Compound Finance",
+                description: "Algorithmic Money Market",
+                website: "https://compound.finance",
+                icon: "compound_icon_url"
+            });
     }
 
     function getSupplyAPY() external view returns (uint256) {

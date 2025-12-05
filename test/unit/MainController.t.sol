@@ -33,10 +33,10 @@ contract TestYieldAdapter is IYieldAdapter {
         address token,
         uint256 amount,
         bytes calldata /* data */
-    ) external returns (uint256) {
+    ) external returns (uint256, address) {
         // Mock deposit: Burn token, return same amount as "shares" (just for tracking)
         MockERC20(token).transferFrom(msg.sender, address(this), amount);
-        return amount;
+        return (amount, address(0));
     }
 
     function withdraw(

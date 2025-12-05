@@ -20,11 +20,7 @@ contract MethLabAdapter is IYieldAdapter {
         address token,
         uint256 amount,
         bytes calldata /* data */
-    )
-        external
-        override
-        returns (uint256)
-    {
+    ) external override returns (uint256, address) {
         address vault = underlyingToVault[token];
         if (vault == address(0)) revert VaultNotFound(token);
 
@@ -36,24 +32,27 @@ contract MethLabAdapter is IYieldAdapter {
 
         // 3. Deposit into MethLab Vault
         // Shares are minted to this adapter
-        return IMethLab(vault).deposit(amount, address(this));
+        uint256 sharesMinted = IMethLab(vault).deposit(amount, address(this));
+
+        // 4. Forward shares to Router
+        IERC20(vault).transfer(msg.sender, sharesMinted);
+
+        return (sharesMinted, vault);
     }
 
     function withdraw(
         address token,
         uint256 amount,
         bytes calldata /* data */
-    )
-        external
-        override
-        returns (uint256)
-    {
+    ) external override returns (uint256) {
         address vault = underlyingToVault[token];
         if (vault == address(0)) revert VaultNotFound(token);
 
         // 1. Withdraw from MethLab Vault
         // 'amount' here is treated as shares amount to burn
-        try IMethLab(vault).withdraw(amount, address(this)) returns (uint256 assetsReceived) {
+        try IMethLab(vault).withdraw(amount, address(this)) returns (
+            uint256 assetsReceived
+        ) {
             // 2. Transfer underlying tokens to Router (msg.sender)
             IERC20(token).transfer(msg.sender, assetsReceived);
             return assetsReceived;
@@ -67,14 +66,20 @@ contract MethLabAdapter is IYieldAdapter {
         }
     }
 
-    function getProtocolInfo() external pure override returns (ProtocolInfo memory) {
-        return ProtocolInfo({
-            name: "MethLab",
-            // Updated description to reflect the unique nature of MethLab's yield
-            description: "Fixed Term/Rate Lending. APY is a Target Rate and depends on utilization.",
-            website: "https://methlab.xyz",
-            icon: "methlab_icon_url"
-        });
+    function getProtocolInfo()
+        external
+        pure
+        override
+        returns (ProtocolInfo memory)
+    {
+        return
+            ProtocolInfo({
+                name: "MethLab",
+                // Updated description to reflect the unique nature of MethLab's yield
+                description: "Fixed Term/Rate Lending. APY is a Target Rate and depends on utilization.",
+                website: "https://methlab.xyz",
+                icon: "methlab_icon_url"
+            });
     }
 
     function getSupplyAPY(address token) external view returns (uint256) {

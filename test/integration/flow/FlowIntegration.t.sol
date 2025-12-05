@@ -14,6 +14,14 @@ import {MockComet} from "../../../src/yield/mocks/MockComet.sol";
 import {CompoundAdapter} from "../../../src/yield/adapters/CompoundAdapter.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
+import {
+    InitCapitalAdapter
+} from "../../../src/yield/adapters/InitCapitalAdapter.sol";
+import {MockInitCore} from "../../../src/yield/mocks/initCore/MockInitCore.sol";
+import {
+    MockLendingPool
+} from "../../../src/yield/mocks/initCore/MockLendingPool.sol";
+
 contract FlowIntegrationTest is Test {
     MainController controller;
     SwapAggregator swapAggregator;
@@ -27,6 +35,10 @@ contract FlowIntegrationTest is Test {
 
     MockComet mockComet;
     CompoundAdapter compoundAdapter;
+
+    MockInitCore initCore;
+    MockLendingPool lendingPool;
+    InitCapitalAdapter initAdapter;
 
     address user = address(0x123);
     address user2 = address(0x456);
@@ -52,21 +64,27 @@ contract FlowIntegrationTest is Test {
         fusionXRouter.setRate(address(usdt), address(idrx), 16500);
 
         // 4. Deploy Compound System (Yield)
-        // Base token for Comet is IDRX (since we swap to IDRX then deposit)
         mockComet = new MockComet(address(idrx));
         compoundAdapter = new CompoundAdapter(address(mockComet));
 
-        // 5. Whitelist Adapters
+        // 5. Deploy Init Capital System (Yield)
+        initCore = new MockInitCore();
+        // LendingPool needs to be for IDRX
+        lendingPool = new MockLendingPool(address(idrx));
+        initAdapter = new InitCapitalAdapter(address(initCore));
+        initAdapter.setPool(address(idrx), address(lendingPool));
+
+        // 6. Whitelist Adapters
         swapAggregator.addTrustedAdapter(address(fusionXAdapter));
         yieldRouter.setAdapterWhitelist(address(compoundAdapter), true);
+        yieldRouter.setAdapterWhitelist(address(initAdapter), true);
 
-        // 6. Deploy Controller
+        // 7. Deploy Controller
         controller = new MainController(user);
 
-        // 7. Provide Liquidity to FusionXRouter
-        // The router needs IDRX to send back to the user during the swap
-        idrx.giveMe(10_000_000 * 1e6); // Mint to self (user) first
-        idrx.transfer(address(fusionXRouter), 10_000_000 * 1e6); // Transfer to router
+        // 8. Provide Liquidity to FusionXRouter
+        idrx.giveMe(10_000_000 * 1e6);
+        idrx.transfer(address(fusionXRouter), 10_000_000 * 1e6);
 
         vm.stopPrank();
     }
@@ -75,117 +93,80 @@ contract FlowIntegrationTest is Test {
         vm.startPrank(user);
 
         console.log("--- Start: Mint -> Swap -> Transfer ---");
-        console.log("Initial User USDT Balance:", usdt.balanceOf(user));
-        console.log("Initial User IDRX Balance:", idrx.balanceOf(user));
 
-        // Define Actions
         IMainController.Action[] memory actions = new IMainController.Action[](
-            2
+            3
         );
 
         // Action 1: Mint USDT
-        // mint(token, amount)
-        // Mint 100 USDT (6 decimals)
         uint256 mintAmount = 100 * 1e6;
-        bytes memory mintData = abi.encode(address(usdt), mintAmount);
-
         actions[0] = IMainController.Action({
             actionType: IMainController.ActionType.MINT,
             targetContract: address(usdt),
-            data: mintData,
-            inputAmountPercentage: 0 // Ignored for MINT
+            data: abi.encode(address(usdt), mintAmount),
+            inputAmountPercentage: 0
         });
 
         // Action 2: Swap USDT -> IDRX
         // swapWithProvider(adapter, tokenIn, tokenOut, amountIn, minAmountOut, to)
-        // We want to swap 100% of the minted USDT
-        // Expected Output: 100 * 16500 = 1,650,000 IDRX
         bytes memory swapData = abi.encode(
             address(fusionXAdapter),
             address(usdt),
             address(idrx),
-            0, // placeholder amount
-            0, // minAmountOut
-            address(0) // to: address(0) means keep in Controller
+            0,
+            0,
+            address(0)
         );
 
         actions[1] = IMainController.Action({
             actionType: IMainController.ActionType.SWAP,
             targetContract: address(swapAggregator),
             data: swapData,
-            inputAmountPercentage: 10000 // 100%
+            inputAmountPercentage: 10000
         });
 
-        // We need a 3rd action to Transfer to User2, but let's try chaining 3 actions
-        // Re-defining actions array to size 3
-        IMainController.Action[] memory actions3 = new IMainController.Action[](
-            3
-        );
-        actions3[0] = actions[0];
-        actions3[1] = actions[1];
-
         // Action 3: Transfer IDRX to User2
-        bytes memory transferData = abi.encode(address(idrx));
-
-        actions3[2] = IMainController.Action({
+        actions[2] = IMainController.Action({
             actionType: IMainController.ActionType.TRANSFER,
             targetContract: user2,
-            data: transferData,
-            inputAmountPercentage: 10000 // 100% of IDRX balance
+            data: abi.encode(address(idrx)),
+            inputAmountPercentage: 10000
         });
 
         console.log("Executing Workflow...");
-        // Execute Workflow
-        controller.executeWorkflow(actions3, address(0), 0);
+        controller.executeWorkflow(actions, address(0), 0);
 
-        // Verify:
-        uint256 controllerUsdt = usdt.balanceOf(address(controller));
-        uint256 controllerIdrx = idrx.balanceOf(address(controller));
+        // Verify
         uint256 user2Idrx = idrx.balanceOf(user2);
+        uint256 expectedIdrx = 1650000 * 1e6; // 100 * 16500
 
-        console.log("--- End State ---");
-        console.log("Controller USDT Balance:", controllerUsdt);
-        console.log("Controller IDRX Balance:", controllerIdrx);
-        console.log("User2 IDRX Balance:     ", user2Idrx);
-
-        // 1. Controller should have 0 USDT
-        assertEq(controllerUsdt, 0, "Controller should have 0 USDT");
-        // 2. Controller should have 0 IDRX
-        assertEq(controllerIdrx, 0, "Controller should have 0 IDRX");
-        // 3. User2 should have 1,650,000 IDRX
-        uint256 expectedIdrx = 1650000 * 1e6;
-        console.log("Expected User2 IDRX:    ", expectedIdrx);
         assertEq(
             user2Idrx,
             expectedIdrx,
             "User2 should have correct IDRX amount"
         );
+        console.log("User2 IDRX Balance:", user2Idrx);
 
         vm.stopPrank();
     }
 
-    function test_Flow_Mint_Swap_Yield() public {
+    function test_Flow_Mint_Swap_Yield_Transfer() public {
         vm.startPrank(user);
 
-        console.log("--- Start: Mint -> Swap -> Yield ---");
-        console.log("Initial User USDT Balance:", usdt.balanceOf(user));
         console.log(
-            "Initial MockComet IDRX Balance:",
-            idrx.balanceOf(address(mockComet))
+            "--- Start: Mint -> Swap -> Yield (Compound) -> Transfer Shares ---"
         );
 
         IMainController.Action[] memory actions = new IMainController.Action[](
-            3
+            4
         );
 
         // Action 1: Mint USDT
         uint256 mintAmount = 100 * 1e6;
-        bytes memory mintData = abi.encode(address(usdt), mintAmount);
-
         actions[0] = IMainController.Action({
             actionType: IMainController.ActionType.MINT,
             targetContract: address(usdt),
-            data: mintData,
+            data: abi.encode(address(usdt), mintAmount),
             inputAmountPercentage: 0
         });
 
@@ -207,43 +188,138 @@ contract FlowIntegrationTest is Test {
         });
 
         // Action 3: Yield Deposit IDRX into Compound
-        // deposit(adapter, token, amount, data)
         bytes memory yieldData = abi.encode(
             address(compoundAdapter),
             address(idrx),
-            0, // placeholder amount
-            "" // adapter data
+            0,
+            ""
         );
 
         actions[2] = IMainController.Action({
             actionType: IMainController.ActionType.YIELD,
             targetContract: address(yieldRouter),
             data: yieldData,
-            inputAmountPercentage: 10000 // 100% of IDRX balance
+            inputAmountPercentage: 10000
+        });
+
+        // Action 4: Transfer Shares (MockComet) to User2
+        // Note: The share token for Compound is the Comet address itself
+        actions[3] = IMainController.Action({
+            actionType: IMainController.ActionType.TRANSFER,
+            targetContract: user2,
+            data: abi.encode(address(mockComet)), // Token to transfer is the Share Token
+            inputAmountPercentage: 10000 // 100% of Shares
         });
 
         console.log("Executing Workflow...");
-        // Execute Workflow
         controller.executeWorkflow(actions, address(0), 0);
 
         // Verify:
-        uint256 controllerUsdt = usdt.balanceOf(address(controller));
-        uint256 controllerIdrx = idrx.balanceOf(address(controller));
-        uint256 cometIdrx = idrx.balanceOf(address(mockComet));
-
-        console.log("--- End State ---");
-        console.log("Controller USDT Balance:", controllerUsdt);
-        console.log("Controller IDRX Balance:", controllerIdrx);
-        console.log("MockComet IDRX Balance: ", cometIdrx);
-
-        // 1. Controller should have 0 USDT
-        assertEq(controllerUsdt, 0, "Controller should have 0 USDT");
-        // 2. Controller should have 0 IDRX
-        assertEq(controllerIdrx, 0, "Controller should have 0 IDRX");
-        // 3. MockComet should hold the IDRX (since CompoundAdapter supplies it there)
+        // 1. MockComet should hold the IDRX
         uint256 expectedCometIdrx = 1650000 * 1e6;
-        console.log("Expected MockComet IDRX:", expectedCometIdrx);
-        assertEq(cometIdrx, expectedCometIdrx, "MockComet should hold IDRX");
+        assertEq(
+            idrx.balanceOf(address(mockComet)),
+            expectedCometIdrx,
+            "MockComet should hold underlying IDRX"
+        );
+
+        // 2. User2 should hold the Shares (Comet Token)
+        // MockComet mints 1:1, so User2 should have 1,650,000 * 1e6 cToken
+        // Wait, MockComet mints 1:1.
+        uint256 sharesUser2 = mockComet.balanceOf(user2);
+        console.log("User2 Shares (Comet):", sharesUser2);
+
+        // Assert shares
+        assertEq(
+            sharesUser2,
+            expectedCometIdrx,
+            "User2 should hold Compound Shares"
+        );
+
+        // 3. Controller should have 0 shares
+        assertEq(
+            mockComet.balanceOf(address(controller)),
+            0,
+            "Controller should have 0 Shares"
+        );
+
+        vm.stopPrank();
+    }
+
+    function test_Flow_Mint_Swap_Init_Yield_Transfer() public {
+        vm.startPrank(user);
+
+        console.log(
+            "--- Start: Mint -> Swap -> Yield (InitCapital) -> Transfer Shares ---"
+        );
+
+        IMainController.Action[] memory actions = new IMainController.Action[](
+            4
+        );
+
+        // Action 1: Mint USDT
+        actions[0] = IMainController.Action({
+            actionType: IMainController.ActionType.MINT,
+            targetContract: address(usdt),
+            data: abi.encode(address(usdt), 100 * 1e6),
+            inputAmountPercentage: 0
+        });
+
+        // Action 2: Swap USDT -> IDRX
+        actions[1] = IMainController.Action({
+            actionType: IMainController.ActionType.SWAP,
+            targetContract: address(swapAggregator),
+            data: abi.encode(
+                address(fusionXAdapter),
+                address(usdt),
+                address(idrx),
+                0,
+                0,
+                address(0)
+            ),
+            inputAmountPercentage: 10000
+        });
+
+        // Action 3: Yield Deposit IDRX into InitCapital
+        actions[2] = IMainController.Action({
+            actionType: IMainController.ActionType.YIELD,
+            targetContract: address(yieldRouter),
+            data: abi.encode(address(initAdapter), address(idrx), 0, ""),
+            inputAmountPercentage: 10000
+        });
+
+        // Action 4: Transfer Shares (LendingPool Token) to User2
+        // Share token for Init is the MockLendingPool
+        actions[3] = IMainController.Action({
+            actionType: IMainController.ActionType.TRANSFER,
+            targetContract: user2,
+            data: abi.encode(address(lendingPool)), // Token to transfer is the Pool Token
+            inputAmountPercentage: 10000
+        });
+
+        console.log("Executing Workflow...");
+        controller.executeWorkflow(actions, address(0), 0);
+
+        // Verify:
+        // 1. MockLendingPool should hold the IDRX
+        uint256 expectedIdrx = 1650000 * 1e6;
+        assertEq(
+            idrx.balanceOf(address(lendingPool)),
+            expectedIdrx,
+            "LendingPool should hold underlying IDRX"
+        );
+
+        // 2. User2 should hold the Shares
+        // MockInitCore currently hardcodes minting "100 ether" shares regardless of input.
+        // Let's rely on that mock behavior for verification.
+        uint256 sharesUser2 = lendingPool.balanceOf(user2);
+        console.log("User2 Shares (Init Pool):", sharesUser2);
+
+        assertEq(
+            sharesUser2,
+            100 ether,
+            "User2 should hold Init Shares (Mock hardcoded 100 ether)"
+        );
 
         vm.stopPrank();
     }

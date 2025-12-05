@@ -75,25 +75,24 @@ contract YieldRouterRefactorVerification is Test {
         token.approve(address(router), 100 ether);
 
         // Record balances before
-        uint256 adapterShareBalanceBefore = comet.balanceOf(
-            address(compoundAdapter)
-        );
+        uint256 userShareBalanceBefore = comet.balanceOf(user);
 
         // Deposit
         router.deposit(address(compoundAdapter), address(token), 100 ether, "");
 
         // Record balances after
+        uint256 userShareBalanceAfter = comet.balanceOf(user);
         uint256 adapterShareBalanceAfter = comet.balanceOf(
             address(compoundAdapter)
         );
 
-        // Verify shares were minted to the Adapter (since Adapter calls supply)
-        // MockComet mints 1:1, so we expect 100 ether increase
+        // Verify shares were forwarded to the User (MockComet -> Adapter -> Router -> User)
         assertEq(
-            adapterShareBalanceAfter - adapterShareBalanceBefore,
+            userShareBalanceAfter - userShareBalanceBefore,
             100 ether,
-            "Adapter should receive shares"
+            "User should receive shares"
         );
+        assertEq(adapterShareBalanceAfter, 0, "Adapter should NOT hold shares");
 
         vm.stopPrank();
     }

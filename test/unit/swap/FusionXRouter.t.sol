@@ -16,9 +16,10 @@ contract FusionXRouterTest is Test {
     FusionXRouter router;
 
     uint256 constant AMOUNT_IN = 100 * 10 ** 6; // 100 tokens
-    uint256 constant EXCHANGE_RATE = 2; // 1 TokenA = 2 TokenB
+    uint256 constant EXCHANGE_RATE = 2 * 10 ** 18; // 1 TokenA = 2 TokenB
     uint256 constant MIN_AMOUNT_OUT = 199 * 10 ** 6; // Expect 200, tolerate 199
-    uint256 constant EXPECTED_OUT = AMOUNT_IN * EXCHANGE_RATE;
+    uint256 constant RATE_DECIMAL = 1e18;
+    uint256 constant EXPECTED_OUT = AMOUNT_IN * EXCHANGE_RATE / RATE_DECIMAL;
 
     function setUp() public {
         vm.startPrank(DEPLOYER);

@@ -2,11 +2,16 @@
 pragma solidity ^0.8.19;
 
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
+import {
+    SafeERC20
+} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
+import {Ownable} from "openzeppelin-contracts/contracts/access/Ownable.sol";
 import {IYieldAdapter} from "./interfaces/IYieldAdapter.sol";
 
-contract YieldRouter {
+contract YieldRouter is Ownable {
+    using SafeERC20 for IERC20;
+
     error AdapterNotWhitelisted(address adapter);
-    error TransferFailed();
 
     event Deposited(
         address indexed user,
@@ -25,22 +30,18 @@ contract YieldRouter {
     event AdapterWhitelisted(address indexed adapter, bool status);
 
     mapping(address => bool) public isAdapterWhitelisted;
-    address public owner;
 
-    modifier onlyOwner() {
-        require(msg.sender == owner, "Not owner");
+    constructor() Ownable(msg.sender) {}
+
+    modifier onlyWhitelisted(address adapter) {
+        _onlyWhitelisted(adapter);
         _;
     }
 
-    modifier onlyWhitelisted(address adapter) {
+    function _onlyWhitelisted(address adapter) internal view {
         if (!isAdapterWhitelisted[adapter]) {
             revert AdapterNotWhitelisted(adapter);
         }
-        _;
-    }
-
-    constructor() {
-        owner = msg.sender;
     }
 
     function setAdapterWhitelist(
@@ -62,15 +63,11 @@ contract YieldRouter {
         bytes calldata data
     ) external onlyWhitelisted(adapter) returns (uint256) {
         // 1. Transfer tokens from user to this router
-        bool success = IERC20(token).transferFrom(
-            msg.sender,
-            address(this),
-            amount
-        );
-        if (!success) revert TransferFailed();
+        IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
 
         // 2. Approve adapter to spend tokens
-        IERC20(token).approve(adapter, amount);
+        // forceApprove ensures compatibility even if approval isn't 0 first
+        IERC20(token).forceApprove(adapter, amount);
 
         // 3. Call adapter deposit
         (uint256 amountOut, address shareToken) = IYieldAdapter(adapter)
@@ -78,11 +75,7 @@ contract YieldRouter {
 
         // 4. Transfer receipt tokens (shares) back to user
         if (shareToken != address(0) && amountOut > 0) {
-            bool shareSuccess = IERC20(shareToken).transfer(
-                msg.sender,
-                amountOut
-            );
-            require(shareSuccess, "Share transfer failed");
+            IERC20(shareToken).safeTransfer(msg.sender, amountOut);
         }
 
         emit Deposited(msg.sender, adapter, token, amount, amountOut);
@@ -94,30 +87,28 @@ contract YieldRouter {
      */
     function withdraw(
         address adapter,
-        address token,
-        uint256 amount,
+        address shareToken, // Explicitly passed share token
+        address token, // Underlying token
+        uint256 amount, // Share amount
         bytes calldata data
     ) external onlyWhitelisted(adapter) returns (uint256) {
-        // 1. User must transfer their LP/Receipt tokens to this router first (if applicable),
-        // OR approve this router to burn/spend them.
-        // This flow depends heavily on whether the user holds an LP token or if the position is tracked internally.
+        // 1. Pull shares from User
+        IERC20(shareToken).safeTransferFrom(msg.sender, address(this), amount);
 
-        // Assuming user holds an LP token and approves this router:
-        // IERC20(lpToken).transferFrom(msg.sender, address(this), amount);
+        // 2. Transfer shares to Adapter (so it can burn them)
+        IERC20(shareToken).safeTransfer(adapter, amount);
 
-        // For this generic implementation, we assume the `amount` refers to the underlying asset amount
-        // or the share amount, and the adapter handles the logic.
-
-        // Call adapter withdraw
+        // 3. Call adapter withdraw
+        // Note: 'amount' passed to adapter is typically the share amount to burn
+        // The adapter should handle burning the shares from 'this' (Router)
         uint256 amountReceived = IYieldAdapter(adapter).withdraw(
             token,
             amount,
             data
         );
 
-        // Transfer underlying back to user
-        bool success = IERC20(token).transfer(msg.sender, amountReceived);
-        if (!success) revert TransferFailed();
+        // 4. Transfer underlying back to user
+        IERC20(token).safeTransfer(msg.sender, amountReceived);
 
         emit Withdrawn(msg.sender, adapter, token, amount, amountReceived);
         return amountReceived;

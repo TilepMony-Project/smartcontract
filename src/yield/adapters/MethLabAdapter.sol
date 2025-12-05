@@ -4,16 +4,21 @@ pragma solidity ^0.8.19;
 import {IYieldAdapter} from "../interfaces/IYieldAdapter.sol";
 import {IMethLab} from "../interfaces/IMethLab.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {
+    SafeERC20
+} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract MethLabAdapter is IYieldAdapter {
-    mapping(address => address) public underlyingToVault;
+    using SafeERC20 for IERC20;
+
+    mapping(address => address) public tokenToVault;
 
     error VaultNotFound(address token);
 
     constructor() {}
 
     function setVault(address token, address vault) external {
-        underlyingToVault[token] = vault;
+        tokenToVault[token] = vault;
     }
 
     function deposit(
@@ -21,21 +26,23 @@ contract MethLabAdapter is IYieldAdapter {
         uint256 amount,
         bytes calldata /* data */
     ) external override returns (uint256, address) {
-        address vault = underlyingToVault[token];
+        address vault = tokenToVault[token];
         if (vault == address(0)) revert VaultNotFound(token);
 
         // 1. Transfer tokens from Router to this adapter
-        IERC20(token).transferFrom(msg.sender, address(this), amount);
+        IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
 
         // 2. Approve vault to spend tokens
-        IERC20(token).approve(vault, amount);
+        IERC20(token).forceApprove(vault, amount);
 
         // 3. Deposit into MethLab Vault
         // Shares are minted to this adapter
         uint256 sharesMinted = IMethLab(vault).deposit(amount, address(this));
 
         // 4. Forward shares to Router
-        IERC20(vault).transfer(msg.sender, sharesMinted);
+        if (sharesMinted > 0) {
+            IERC20(vault).safeTransfer(msg.sender, sharesMinted);
+        }
 
         return (sharesMinted, vault);
     }
@@ -45,7 +52,7 @@ contract MethLabAdapter is IYieldAdapter {
         uint256 amount,
         bytes calldata /* data */
     ) external override returns (uint256) {
-        address vault = underlyingToVault[token];
+        address vault = tokenToVault[token];
         if (vault == address(0)) revert VaultNotFound(token);
 
         // 1. Withdraw from MethLab Vault
@@ -54,7 +61,7 @@ contract MethLabAdapter is IYieldAdapter {
             uint256 assetsReceived
         ) {
             // 2. Transfer underlying tokens to Router (msg.sender)
-            IERC20(token).transfer(msg.sender, assetsReceived);
+            IERC20(token).safeTransfer(msg.sender, assetsReceived);
             return assetsReceived;
         } catch Error(string memory reason) {
             revert(reason);
@@ -82,8 +89,8 @@ contract MethLabAdapter is IYieldAdapter {
             });
     }
 
-    function getSupplyAPY(address token) external view returns (uint256) {
-        address vault = underlyingToVault[token];
+    function getSupplyApy(address token) external view returns (uint256) {
+        address vault = tokenToVault[token];
         if (vault == address(0)) return 0;
 
         // NOTE: In Mainnet/Production, this function should query the Strategy contract associated with the DLV.
@@ -92,7 +99,7 @@ contract MethLabAdapter is IYieldAdapter {
         // For this Mock/Testnet implementation, we query the mock's APY directly.
         // We use a low-level call or try/catch in view to be safe if the vault doesn't support getAPY
         // But since we know it's our MockMethLab, we can call it directly.
-        try IMethLab(vault).getAPY() returns (uint256 apy) {
+        try IMethLab(vault).getApy() returns (uint256 apy) {
             return apy;
         } catch {
             return 0;

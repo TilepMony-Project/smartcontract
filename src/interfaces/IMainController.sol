@@ -7,7 +7,8 @@ interface IMainController {
         YIELD,
         BRIDGE,
         TRANSFER,
-        MINT
+        MINT,
+        YIELD_WITHDRAW
     }
 
     struct Action {

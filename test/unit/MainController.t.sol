@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import {Test, console} from "forge-std/Test.sol";
+import {Test} from "forge-std/Test.sol";
 import {MainController} from "../../src/core/MainController.sol";
 import {IMainController} from "../../src/interfaces/IMainController.sol";
 import {SwapAggregator} from "../../src/swap/SwapAggregator.sol";
@@ -9,33 +9,41 @@ import {YieldRouter} from "../../src/yield/YieldRouter.sol";
 import {MockERC20} from "../../src/yield/mocks/MockERC20.sol";
 import {ISwapAdapter} from "../../src/swap/interfaces/ISwapAdapter.sol";
 import {IYieldAdapter} from "../../src/yield/interfaces/IYieldAdapter.sol";
+import {
+    SafeERC20
+} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
 // --- Test Adapters ---
 
 contract TestSwapAdapter is ISwapAdapter {
+    using SafeERC20 for IERC20;
+
     function swap(
         address tokenIn,
         address tokenOut,
         uint256 amountIn,
-        uint256 minAmountOut,
+        uint256 /* minAmountOut */,
         address from,
         address to
     ) external returns (uint256 amountOut) {
         // Mock swap: 1:1 ratio
-        MockERC20(tokenIn).transferFrom(from, address(this), amountIn);
+        IERC20(tokenIn).safeTransferFrom(from, address(this), amountIn);
         MockERC20(tokenOut).mint(to, amountIn); // Mint output to 'to'
         return amountIn;
     }
 }
 
 contract TestYieldAdapter is IYieldAdapter {
+    using SafeERC20 for IERC20;
+
     function deposit(
         address token,
         uint256 amount,
         bytes calldata /* data */
     ) external returns (uint256, address) {
         // Mock deposit: Burn token, return same amount as "shares" (just for tracking)
-        MockERC20(token).transferFrom(msg.sender, address(this), amount);
+        IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
         return (amount, address(0));
     }
 
@@ -44,13 +52,18 @@ contract TestYieldAdapter is IYieldAdapter {
         uint256 amount,
         bytes calldata /* data */
     ) external returns (uint256) {
-        MockERC20(token).transfer(msg.sender, amount);
+        IERC20(token).safeTransfer(msg.sender, amount);
         return amount;
     }
 
     function getProtocolInfo() external pure returns (ProtocolInfo memory) {
         return
-            ProtocolInfo("Test", "Test Desc", "https://test.com", "icon.png");
+            ProtocolInfo({
+                name: "Test",
+                description: "Test Desc",
+                website: "https://test.com",
+                icon: "icon.png"
+            });
     }
 }
 

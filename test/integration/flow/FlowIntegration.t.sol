@@ -12,7 +12,6 @@ import {FusionXRouter} from "../../../src/swap/routers/FusionXRouter.sol";
 import {FusionXAdapter} from "../../../src/swap/adapters/FusionXAdapter.sol";
 import {MockComet} from "../../../src/yield/mocks/MockComet.sol";
 import {CompoundAdapter} from "../../../src/yield/adapters/CompoundAdapter.sol";
-import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
 import {
     InitCapitalAdapter
@@ -84,7 +83,8 @@ contract FlowIntegrationTest is Test {
 
         // 8. Provide Liquidity to FusionXRouter
         idrx.giveMe(10_000_000 * 1e6);
-        idrx.transfer(address(fusionXRouter), 10_000_000 * 1e6);
+        bool success = idrx.transfer(address(fusionXRouter), 10_000_000 * 1e6);
+        require(success, "Transfer failed");
 
         vm.stopPrank();
     }

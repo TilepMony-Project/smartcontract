@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import "forge-std/Test.sol";
-import "forge-std/console.sol";
-import {InitCapitalAdapter} from "../../../src/yield/adapters/InitCapitalAdapter.sol";
+import {Test, console} from "forge-std/Test.sol";
+import {
+    InitCapitalAdapter
+} from "../../../src/yield/adapters/InitCapitalAdapter.sol";
 import {MockInitCore} from "../../../src/yield/mocks/initCore/MockInitCore.sol";
-import {MockLendingPool} from "../../../src/yield/mocks/initCore/MockLendingPool.sol";
+import {
+    MockLendingPool
+} from "../../../src/yield/mocks/initCore/MockLendingPool.sol";
 import {MockERC20} from "../../../src/yield/mocks/MockERC20.sol";
 import {YieldRouter} from "../../../src/yield/YieldRouter.sol";
 
@@ -44,7 +47,12 @@ contract InitCapitalAdapterTest is Test {
         uint256 amount = 100 * 1e6;
 
         vm.prank(user);
-        uint256 amountOut = router.deposit(address(adapter), address(token), amount, "");
+        uint256 amountOut = router.deposit(
+            address(adapter),
+            address(token),
+            amount,
+            ""
+        );
 
         console.log("Amount Deposited:", amount);
         console.log("Amount Out (Shares):", amountOut);
@@ -63,14 +71,28 @@ contract InitCapitalAdapterTest is Test {
         router.deposit(address(adapter), address(token), amount, "");
 
         console.log("Initial Deposit Amount:", amount);
-        console.log("LendingPool Balance After Deposit:", token.balanceOf(address(lendingPool)));
+        console.log(
+            "LendingPool Balance After Deposit:",
+            token.balanceOf(address(lendingPool))
+        );
 
-        vm.prank(user);
+        vm.startPrank(user);
+        lendingPool.approve(address(router), 100 ether);
         // Withdraw 100 ether shares (which is what we got from deposit mock)
-        uint256 amountReceived = router.withdraw(address(adapter), address(token), 100 ether, "");
+        uint256 amountReceived = router.withdraw(
+            address(adapter),
+            address(lendingPool),
+            address(token),
+            100 ether,
+            ""
+        );
+        vm.stopPrank();
 
         console.log("Amount Received:", amountReceived);
-        console.log("LendingPool Balance After Withdraw:", token.balanceOf(address(lendingPool)));
+        console.log(
+            "LendingPool Balance After Withdraw:",
+            token.balanceOf(address(lendingPool))
+        );
 
         // MockInitCore returns 100 * 10**decimals (which is amount)
         assertEq(amountReceived, amount);
@@ -85,7 +107,7 @@ contract InitCapitalAdapterTest is Test {
         uint256 targetRate = 1585489599;
         lendingPool.setSupplyRate(targetRate);
 
-        uint256 apy = adapter.getSupplyAPY(address(token));
+        uint256 apy = adapter.getSupplyApy(address(token));
         console.log("Init Capital APY:", apy);
         // Should be approx 5% (5e16)
         // Note: The mock calculation in adapter might be slightly different depending on constants

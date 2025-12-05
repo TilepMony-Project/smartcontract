@@ -4,6 +4,9 @@ pragma solidity ^0.8.19;
 import {IMainController} from "../interfaces/IMainController.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {
+    SafeERC20
+} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
+import {
     ReentrancyGuard
 } from "openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol";
 import {Ownable} from "openzeppelin-contracts/contracts/access/Ownable.sol";
@@ -19,6 +22,14 @@ interface IYieldRouter {
         uint256 amount,
         bytes calldata data
     ) external returns (uint256);
+
+    function withdraw(
+        address adapter,
+        address shareToken,
+        address token,
+        uint256 amount,
+        bytes calldata data
+    ) external returns (uint256);
 }
 
 interface IMintableToken {
@@ -26,6 +37,8 @@ interface IMintableToken {
 }
 
 contract MainController is IMainController, ReentrancyGuard, Ownable {
+    using SafeERC20 for IERC20;
+
     constructor(address _owner) Ownable(_owner) {}
 
     function executeWorkflow(
@@ -38,7 +51,7 @@ contract MainController is IMainController, ReentrancyGuard, Ownable {
             if (initialToken == address(0)) {
                 require(msg.value == initialAmount, "Invalid ETH amount");
             } else {
-                IERC20(initialToken).transferFrom(
+                IERC20(initialToken).safeTransferFrom(
                     msg.sender,
                     address(this),
                     initialAmount
@@ -58,22 +71,7 @@ contract MainController is IMainController, ReentrancyGuard, Ownable {
         uint256 inputAmount = 0;
         address inputToken = address(0);
 
-        // Decode input token from data to calculate balance
-        // Note: This decoding depends on the standard encoding we expect from the frontend.
-        // SWAP: (adapter, tokenIn, tokenOut, amountIn, minAmountOut, to) -> We need tokenIn
-        // YIELD: (adapter, token, amount, data) -> We need token
-
-        // However, the `data` in `Action` is the raw calldata for the target function (e.g. swapWithProvider).
-        // To make this dynamic, we need to know WHICH token to check balance for.
-        // OPTION A: Pass `inputToken` in the Action struct.
-        // OPTION B: Decode based on ActionType.
-
-        // Let's go with Option B, but we need to be careful about decoding.
-        // The `data` field in `Action` is passed DIRECTLY to the aggregator.
-        // So we need to decode it here just to find the token address.
-
         if (action.actionType == ActionType.SWAP) {
-            // swapWithProvider(adapter, tokenIn, tokenOut, amountIn, minAmountOut, to)
             (address adapter, address tokenIn, , , , ) = abi.decode(
                 action.data,
                 (address, address, address, uint256, uint256, address)
@@ -85,17 +83,9 @@ contract MainController is IMainController, ReentrancyGuard, Ownable {
             );
 
             // Approve Aggregator
-            IERC20(tokenIn).approve(action.targetContract, inputAmount);
+            IERC20(tokenIn).forceApprove(action.targetContract, inputAmount);
 
             // Execute Swap
-            // We need to re-encode the data with the ACTUAL inputAmount
-            // This is tricky because `action.data` has the old amount.
-            // We should reconstruct the call.
-
-            // BETTER APPROACH:
-            // The `action.data` should NOT contain the amount if we are calculating it dynamically.
-            // OR we decode, update amount, and re-encode.
-
             (, , address tokenOut, , uint256 minAmountOut, address to) = abi
                 .decode(
                     action.data,
@@ -109,7 +99,7 @@ contract MainController is IMainController, ReentrancyGuard, Ownable {
                     tokenOut,
                     inputAmount,
                     minAmountOut,
-                    to == address(0) ? address(this) : to // Default to keeping funds in Controller for next step
+                    to == address(0) ? address(this) : to
                 );
 
             emit ActionExecuted(
@@ -120,8 +110,6 @@ contract MainController is IMainController, ReentrancyGuard, Ownable {
                 outputAmount
             );
         } else if (action.actionType == ActionType.YIELD) {
-            // deposit(adapter, token, amount, data)
-            // Note: The `data` inside `deposit` is the adapter-specific data.
             (address adapter, address token, , bytes memory adapterData) = abi
                 .decode(action.data, (address, address, uint256, bytes));
             inputToken = token;
@@ -131,7 +119,7 @@ contract MainController is IMainController, ReentrancyGuard, Ownable {
             );
 
             // Approve Router
-            IERC20(token).approve(action.targetContract, inputAmount);
+            IERC20(token).forceApprove(action.targetContract, inputAmount);
 
             // Execute Deposit
             uint256 outputAmount = IYieldRouter(action.targetContract).deposit(
@@ -148,7 +136,6 @@ contract MainController is IMainController, ReentrancyGuard, Ownable {
                 outputAmount
             );
         } else if (action.actionType == ActionType.TRANSFER) {
-            // Transfer logic: data contains (token)
             (address token) = abi.decode(action.data, (address));
             inputToken = token;
             inputAmount = _calculateInputAmount(
@@ -156,14 +143,7 @@ contract MainController is IMainController, ReentrancyGuard, Ownable {
                 action.inputAmountPercentage
             );
 
-            IERC20(token).transfer(action.targetContract, inputAmount);
-            emit ActionExecuted(
-                index,
-                action.actionType,
-                action.targetContract,
-                inputAmount,
-                0
-            );
+            IERC20(token).safeTransfer(action.targetContract, inputAmount);
             emit ActionExecuted(
                 index,
                 action.actionType,
@@ -172,18 +152,59 @@ contract MainController is IMainController, ReentrancyGuard, Ownable {
                 0
             );
         } else if (action.actionType == ActionType.MINT) {
-            // mint: data contains (token, amount)
             (address token, uint256 amount) = abi.decode(
                 action.data,
                 (address, uint256)
             );
             inputToken = token;
-            // For mint, inputAmount is 0 from the controller's perspective (it's created from thin air)
-            // But we can track the minted amount as outputAmount
-
             IMintableToken(token).giveMe(amount);
-
             emit ActionExecuted(index, action.actionType, token, 0, amount);
+        } else if (action.actionType == ActionType.YIELD_WITHDRAW) {
+            (
+                address adapter,
+                address shareToken,
+                address underlyingToken,
+                ,
+                bytes memory adapterData
+            ) = abi.decode(
+                    action.data,
+                    (address, address, address, uint256, bytes)
+                );
+
+            inputToken = shareToken;
+
+            // Calculate input amount based on USER'S balance
+            uint256 userShareBalance = IERC20(shareToken).balanceOf(msg.sender);
+            inputAmount =
+                (userShareBalance * action.inputAmountPercentage) /
+                10000;
+
+            // Pull shares from User
+            IERC20(shareToken).safeTransferFrom(
+                msg.sender,
+                address(this),
+                inputAmount
+            );
+
+            // Approve Router
+            IERC20(shareToken).forceApprove(action.targetContract, inputAmount);
+
+            // Execute Withdraw
+            uint256 outputAmount = IYieldRouter(action.targetContract).withdraw(
+                adapter,
+                shareToken,
+                underlyingToken,
+                inputAmount,
+                adapterData
+            );
+
+            emit ActionExecuted(
+                index,
+                action.actionType,
+                action.targetContract,
+                inputAmount,
+                outputAmount
+            );
         }
     }
 

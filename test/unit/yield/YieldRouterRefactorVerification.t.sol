@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import "forge-std/Test.sol";
+import {Test} from "forge-std/Test.sol";
 import {YieldRouter} from "../../../src/yield/YieldRouter.sol";
 import {CompoundAdapter} from "../../../src/yield/adapters/CompoundAdapter.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
@@ -103,24 +103,29 @@ contract YieldRouterRefactorVerification is Test {
         token.approve(address(router), 100 ether);
         router.deposit(address(compoundAdapter), address(token), 100 ether, "");
 
-        uint256 adapterShareBalanceBefore = comet.balanceOf(
-            address(compoundAdapter)
-        );
+        // User must approve shares for Router to pull
+        comet.approve(address(router), 50 ether);
+
+        uint256 userShareBalanceBefore = comet.balanceOf(user);
         uint256 userTokenBalanceBefore = token.balanceOf(user);
 
         // Withdraw half
-        router.withdraw(address(compoundAdapter), address(token), 50 ether, "");
-
-        uint256 adapterShareBalanceAfter = comet.balanceOf(
-            address(compoundAdapter)
+        router.withdraw(
+            address(compoundAdapter),
+            address(comet), // Share Token
+            address(token), // Underlying
+            50 ether,
+            ""
         );
+
+        uint256 userShareBalanceAfter = comet.balanceOf(user);
         uint256 userTokenBalanceAfter = token.balanceOf(user);
 
-        // Verify shares were burned from Adapter
+        // Verify shares were pulled/burned from User
         assertEq(
-            adapterShareBalanceBefore - adapterShareBalanceAfter,
+            userShareBalanceBefore - userShareBalanceAfter,
             50 ether,
-            "Adapter should burn shares"
+            "User shares should decrease"
         );
         // Verify user got tokens back
         assertEq(

@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import "forge-std/Test.sol";
-import "forge-std/console.sol";
+import {Test, console} from "forge-std/Test.sol";
 import {CompoundAdapter} from "../../../src/yield/adapters/CompoundAdapter.sol";
 import {MockComet} from "../../../src/yield/mocks/MockComet.sol";
 import {MockERC20} from "../../../src/yield/mocks/MockERC20.sol";
@@ -36,7 +35,12 @@ contract CompoundAdapterTest is Test {
         uint256 amount = 100 * 1e6;
 
         vm.prank(user);
-        uint256 amountOut = router.deposit(address(adapter), address(token), amount, "");
+        uint256 amountOut = router.deposit(
+            address(adapter),
+            address(token),
+            amount,
+            ""
+        );
 
         console.log("Amount Deposited:", amount);
         console.log("Amount Out:", amountOut);
@@ -46,12 +50,12 @@ contract CompoundAdapterTest is Test {
         assertEq(token.balanceOf(address(comet)), amount + 10000 * 1e6);
     }
 
-    function testAPY() public {
+    function testAPY() public view {
         console.log("--- Testing Compound APY ---");
         // MockComet default supply rate is 1000000000 (1e9) per second
         // APY = (1e9 * 31536000 * 100) / 1e18 = 3.15%
 
-        uint256 apy = adapter.getSupplyAPY();
+        uint256 apy = adapter.getSupplyApy();
         console.log("Compound APY:", apy);
         assertGt(apy, 0);
     }
@@ -64,13 +68,27 @@ contract CompoundAdapterTest is Test {
         router.deposit(address(adapter), address(token), amount, "");
 
         console.log("Initial Deposit Amount:", amount);
-        console.log("Comet Balance After Deposit:", token.balanceOf(address(comet)));
+        console.log(
+            "Comet Balance After Deposit:",
+            token.balanceOf(address(comet))
+        );
 
-        vm.prank(user);
-        uint256 amountReceived = router.withdraw(address(adapter), address(token), amount, "");
+        vm.startPrank(user);
+        comet.approve(address(router), amount);
+        uint256 amountReceived = router.withdraw(
+            address(adapter),
+            address(comet),
+            address(token),
+            amount,
+            ""
+        );
+        vm.stopPrank();
 
         console.log("Amount Received:", amountReceived);
-        console.log("Comet Balance After Withdraw:", token.balanceOf(address(comet)));
+        console.log(
+            "Comet Balance After Withdraw:",
+            token.balanceOf(address(comet))
+        );
 
         assertEq(amountReceived, amount);
         // Comet balance should decrease by amount

@@ -3,12 +3,14 @@ pragma solidity ^0.8.30;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ISwapRouter} from "../interfaces/ISwapRouter.sol";
+import {Ownable} from "openzeppelin-contracts/contracts/access/Ownable.sol";
 
-contract VertexRouter is ISwapRouter {
+contract VertexRouter is ISwapRouter, Ownable {
     uint256 internal constant RATE_DECIMAL = 1e18;
     mapping(address => mapping(address => uint256)) public exchangeRate;
 
-    function setRate(address tokenIn, address tokenOut, uint256 rate) external {
+    constructor() Ownable(msg.sender) {}
+    function setRate(address tokenIn, address tokenOut, uint256 rate) external onlyOwner {
         exchangeRate[tokenIn][tokenOut] = rate;
     }
 

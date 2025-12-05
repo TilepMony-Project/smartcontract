@@ -39,38 +39,44 @@ contract SwapAggregatorTest is Test {
     }
 
     function setUpFusionX() internal {
+        vm.startPrank(DEPLOYER);
+
         router = new FusionXRouter();
         adapter = new FusionXAdapter(address(router));
 
-        vm.startPrank(DEPLOYER);
         router.setRate(address(tokenA), address(tokenB), EXCHANGE_RATE);
         aggregator.addTrustedAdapter(address(adapter));
         tokenA.mint(SENDER, 1000 * 10 ** 6);
         tokenB.mint(address(router), 1000000 * 10 ** 6);
+
         vm.stopPrank();
     }
 
     function setUpMerchantMoe() internal {
+        vm.startPrank(DEPLOYER);
+
         router = new MerchantMoeRouter();
         adapter = new MerchantMoeAdapter(address(router));
 
-        vm.startPrank(DEPLOYER);
         router.setRate(address(tokenA), address(tokenB), EXCHANGE_RATE);
         aggregator.addTrustedAdapter(address(adapter));
         tokenA.mint(SENDER, 1000 * 10 ** 6);
         tokenB.mint(address(router), 1000000 * 10 ** 6);
+
         vm.stopPrank();
     }
 
     function setUpVertex() internal {
+        vm.startPrank(DEPLOYER);
+
         router = new VertexRouter();
         adapter = new VertexAdapter(address(router));
 
-        vm.startPrank(DEPLOYER);
         router.setRate(address(tokenA), address(tokenB), EXCHANGE_RATE);
         aggregator.addTrustedAdapter(address(adapter));
         tokenA.mint(SENDER, 1000 * 10 ** 6);
         tokenB.mint(address(router), 1000000 * 10 ** 6);
+
         vm.stopPrank();
     }
 

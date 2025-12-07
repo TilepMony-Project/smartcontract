@@ -42,9 +42,9 @@ ICrossChainToken.transferRemote -> Axelar Network
 
 | Chain            | AxelarBridgeRouter                         | AxelarBridgeAdapter                        | Catatan |
 |------------------|--------------------------------------------|--------------------------------------------|---------|
-| Mantle Sepolia   | `0x1111111111111111111111111111111111111111` | `0x2222222222222222222222222222222222222222` | Isi dengan alamat deploy asli saat tersedia. |
-| Base Sepolia     | `0x3333333333333333333333333333333333333333` | `0x4444444444444444444444444444444444444444` | Placeholder untuk memetakan kontrak setelah deployment. |
-| Arbitrum Sepolia | `0x5555555555555555555555555555555555555555` | `0x6666666666666666666666666666666666666666` | Ganti dengan alamat final setelah deploy. |
+| Mantle Sepolia   | `0x891F9B4629DD6fd9814bb6Dda92C0AB27B288818` | `0x713D1A7E7277995f8bc9ae488BD54014e41983e6` | CREATE2, sama di seluruh chain. |
+| Base Sepolia     | `0x891F9B4629DD6fd9814bb6Dda92C0AB27B288818` | `0x713D1A7E7277995f8bc9ae488BD54014e41983e6` | Sama dengan Mantle/Arbitrum. |
+| Arbitrum Sepolia | `0x891F9B4629DD6fd9814bb6Dda92C0AB27B288818` | `0x713D1A7E7277995f8bc9ae488BD54014e41983e6` | Sama dengan Mantle/Base. |
 
 > Gunakan tabel ini sebagai “katalog alamat” supaya tim FE tidak kebingungan saat mengonfigurasi environment atau skrip (mis. `halo/.env`).
 

@@ -10,6 +10,10 @@ import {AxelarBridgeAdapter} from "../src/bridge/adapters/AxelarBridgeAdapter.so
 contract BridgeScript is Script {
     using stdJson for string;
 
+    bytes32 internal constant ROUTER_SALT = keccak256("AxelarBridgeRouter_V1");
+    bytes32 internal constant ADAPTER_SALT = keccak256("AxelarBridgeAdapter_V1");
+    address internal constant CREATE2_FACTORY_ADDR = 0x4e59b44847b379578588920cA78FbF26c0B4956C;
+
     struct TokenHint {
         string label;
         string envSuffix;
@@ -27,17 +31,12 @@ contract BridgeScript is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address deployer = vm.addr(deployerPrivateKey);
         (string memory prefix,) = _readChainPrefix();
-
-        address owner = _readAddressOr(string.concat(prefix, "_BRIDGE_OWNER"), deployer);
+        address owner = deployer;
 
         vm.startBroadcast(deployerPrivateKey);
 
-        AxelarBridgeRouter router = new AxelarBridgeRouter(owner);
-        console.log("AxelarBridgeRouter deployed at:", address(router));
-        console.log("Router owner:", owner);
-
-        AxelarBridgeAdapter adapter = new AxelarBridgeAdapter(address(router));
-        console.log("AxelarBridgeAdapter deployed at:", address(adapter));
+        AxelarBridgeRouter router = _deployRouter(owner);
+        AxelarBridgeAdapter adapter = _deployAdapter(address(router));
 
         _configureSupportedTokens(router, prefix);
 
@@ -76,8 +75,34 @@ contract BridgeScript is Script {
         }
     }
 
-    function _readAddressOr(string memory key, address defaultValue) internal returns (address) {
-        (address value, bool exists) = _readAddressOptional(key);
-        return exists ? value : defaultValue;
+    function _deployRouter(address owner) internal returns (AxelarBridgeRouter router) {
+        bytes memory bytecode = abi.encodePacked(type(AxelarBridgeRouter).creationCode, abi.encode(owner));
+        bytes32 initCodeHash = keccak256(bytecode);
+        address predicted = vm.computeCreate2Address(ROUTER_SALT, initCodeHash, CREATE2_FACTORY_ADDR);
+
+        if (predicted.code.length == 0) {
+            router = new AxelarBridgeRouter{salt: ROUTER_SALT}(owner);
+            require(address(router) == predicted, "Router address mismatch");
+            console.log("AxelarBridgeRouter deployed at:", address(router));
+            console.log("Router owner:", owner);
+        } else {
+            router = AxelarBridgeRouter(predicted);
+            console.log("AxelarBridgeRouter already deployed at:", predicted);
+        }
+    }
+
+    function _deployAdapter(address routerAddr) internal returns (AxelarBridgeAdapter adapter) {
+        bytes memory bytecode = abi.encodePacked(type(AxelarBridgeAdapter).creationCode, abi.encode(routerAddr));
+        bytes32 initCodeHash = keccak256(bytecode);
+        address predicted = vm.computeCreate2Address(ADAPTER_SALT, initCodeHash, CREATE2_FACTORY_ADDR);
+
+        if (predicted.code.length == 0) {
+            adapter = new AxelarBridgeAdapter{salt: ADAPTER_SALT}(routerAddr);
+            require(address(adapter) == predicted, "Adapter address mismatch");
+            console.log("AxelarBridgeAdapter deployed at:", address(adapter));
+        } else {
+            adapter = AxelarBridgeAdapter(predicted);
+            console.log("AxelarBridgeAdapter already deployed at:", predicted);
+        }
     }
 }

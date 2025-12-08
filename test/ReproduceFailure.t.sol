@@ -10,10 +10,10 @@ import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 contract ReproduceFailure is Test {
     using SafeERC20 for IERC20;
 
-    // ERC20InsufficientAllowance(address spender, uint256 allowance, uint256 needed)
-    error ERC20InsufficientAllowance(
-        address spender,
-        uint256 allowance,
+    // ERC20InsufficientBalance(address sender, uint256 balance, uint256 needed)
+    error ERC20InsufficientBalance(
+        address sender,
+        uint256 balance,
         uint256 needed
     );
 
@@ -23,11 +23,11 @@ contract ReproduceFailure is Test {
 
     function test_verifySelector() public {
         bytes4 selector = bytes4(
-            keccak256("ERC20InsufficientAllowance(address,uint256,uint256)")
+            keccak256("ERC20InsufficientBalance(address,uint256,uint256)")
         );
         console.logBytes4(selector);
 
-        // 0xfb8f41b2
-        assertEq(selector, bytes4(0xfb8f41b2));
+        // 0xe450d38c
+        assertEq(selector, bytes4(0xe450d38c));
     }
 }

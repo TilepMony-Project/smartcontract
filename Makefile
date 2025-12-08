@@ -1,4 +1,4 @@
-.PHONY: build size rpc run deploy deploy-token deploy-yield deploy-swap
+.PHONY: build size rpc run deploy deploy-token deploy-yield deploy-swap deploy-controller
 
 GREEN := \033[0;32m
 CYAN := \033[0;36m
@@ -59,8 +59,17 @@ deploy-swap:
 		--verify \
 		--etherscan-api-key $(ETHERSCAN_API_KEY)
 
+deploy-controller:
+	@echo "$(CYAN)🚚 [DEPLOY] Deploying Main Controller...$(RESET)"
+	@forge script script/MainController.s.sol:MainControllerScript \
+		--rpc-url $(RPC_URL) \
+		--broadcast -vvv \
+		--verify \
+		--etherscan-api-key $(ETHERSCAN_API_KEY)
+
 deploy:
 	@clear
 	@$(MAKE) deploy-token
 	@$(MAKE) deploy-yield
 	@$(MAKE) deploy-swap
+	@$(MAKE) deploy-controller

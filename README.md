@@ -1,66 +1,88 @@
-## Foundry
+# Deployment Guide
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+This guide describes how to deploy the TilepMony smart contract system, including tokens, yield protocols, swap routers, and the main controller.
 
-Foundry consists of:
+## Prerequisites
 
-- **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
-- **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
-- **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
-- **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+- **Foundry**: Ensure you have Foundry installed (`forge`, `cast`).
+- **Environment Variables**: Create a `.env` file based on `.env.example`.
+  
+  Required variables:
+  ```env
+  PRIVATE_KEY=...
+  RPC_URL=...
+  ETHERSCAN_API_KEY=...
+  
+  # Token Addresses (required for Yield and Swap scripts)
+  IDRX_ADDRESS=...
+  USDC_ADDRESS=...
+  USDT_ADDRESS=...
+  
+  # For CrossChain Token Deployment (Script reads from chains.json but needs these env vars)
+  # Replace [CHAIN_PREFIX] with the prefix found in chains.json (e.g. SEPOLIA_AXELAR_GATEWAY)
+  [CHAIN_PREFIX]_AXELAR_GATEWAY=...
+  [CHAIN_PREFIX]_AXELAR_GAS_SERVICE=...
+  ```
 
-## Documentation
+## Deployment Order
 
-https://book.getfoundry.sh/
+### 1. Deploy Tokens (If needed)
 
-## Usage
+If you are on a testnet and need mock tokens:
 
-### Build
+```bash
+make deploy-token
+```
+*Note: After deployment, update your `.env` file with the new token addresses.*
 
-```shell
-$ forge build
+### 2. Deploy Cross-Chain Tokens (Optional)
+
+If you need cross-chain capabilities:
+
+```bash
+forge script script/TokenCrossChain.s.sol --rpc-url $RPC_URL --broadcast --verify
 ```
 
-### Test
+### 3. Deploy Swap System
 
-```shell
-$ forge test
+This script deploys the mock Swap Routers (FusionX, MerchantMoe, Vertex), their Adapters, and the central `SwapAggregator`. It also initializes some default exchange rates (1:1 for stablecoins).
+
+```bash
+make deploy-swap
 ```
 
-### Format
+**Key Contracts Deployed:**
+- `FusionXRouter` & `Adapter`
+- `MerchantMoeRouter` & `Adapter`
+- `VertexRouter` & `Adapter`
+- `SwapAggregator`
 
-```shell
-$ forge fmt
+### 4. Deploy Yield System
+
+This script deploys the `YieldRouter` and adapters for MethLab, InitCapital, and Compound. It also deploys mock versions of these protocols for testing purposes.
+
+```bash
+make deploy-yield
 ```
 
-### Gas Snapshots
+**Key Contracts Deployed:**
+- `YieldRouter`
+- `MethLabAdapter` & `MockMethLab` vaults
+- `InitCapitalAdapter` & `MockInitCore/Pools`
+- `CompoundAdapter` & `MockComet` markets
 
-```shell
-$ forge snapshot
+### 5. Deploy Main Controller
+
+The `MainController` orchestrates the workflows.
+
+```bash
+make deploy-controller
 ```
 
-### Anvil
+## Verification
 
-```shell
-$ anvil
-```
+After deployment, you can verify contract source code on Etherscan (or the relevant block explorer). The scripts include the `--verify` flag, but if it fails, you can retry using:
 
-### Deploy
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
+```bash
+forge verify-contract <ADDRESS> <CONTRACT_NAME> --chain-id <CHAIN_ID> --etherscan-api-key <KEY>
 ```

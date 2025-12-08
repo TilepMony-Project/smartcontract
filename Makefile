@@ -1,4 +1,4 @@
-.PHONY: build size rpc run deploy deploy-token deploy-yield deploy-swap deploy-controller
+.PHONY: build size rpc run deploy deploy-token deploy-yield deploy-swap deploy-controller check-router-liquidity
 
 GREEN := \033[0;32m
 CYAN := \033[0;36m
@@ -71,6 +71,12 @@ update-rates:
 	@forge script script/UpdateRates.s.sol \
 		--rpc-url $(RPC_URL) \
 		--broadcast -vvv
+
+check-router-liquidity:
+	@echo "$(CYAN)🔍 [CHECK] Checking router liquidity...$(RESET)"
+	@forge script script/CheckRouterBalance.s.sol \
+		--rpc-url $(RPC_URL) \
+		-vvv
 
 deploy-controller:
 	@echo "$(CYAN)🚚 [DEPLOY] Deploying Main Controller...$(RESET)"

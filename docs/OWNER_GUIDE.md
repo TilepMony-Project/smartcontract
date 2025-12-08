@@ -24,6 +24,10 @@ These are mock routers used for testing. In a real production scenario, these wo
   - Call `setRate(address tokenIn, address tokenOut, uint256 rate)`
   - `rate` is scaled by 1e18. (e.g., 1.0 = 1000000000000000000)
 
+### Liquidity Provisioning (Required for Simulation)
+Since these are mock routers, you must provide them with liquidity to enable swaps.
+- **Add Liquidity**: Run `make add-liquidity-router`
+
 ## Yield System
 
 ### YieldRouter

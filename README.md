@@ -57,7 +57,15 @@ make deploy-swap
 - `VertexRouter` & `Adapter`
 - `SwapAggregator`
 
-### 4. Deploy Yield System
+### 4. Add Liquidity to Routers (Required for Swaps)
+
+Since we are using mock routers on testnet, they need liquidity to facilitate swaps. This script mints test tokens and transfers them to the deployed routers.
+
+```bash
+make add-liquidity-router
+```
+
+### 5. Deploy Yield System
 
 This script deploys the `YieldRouter` and adapters for MethLab, InitCapital, and Compound. It also deploys mock versions of these protocols for testing purposes.
 
@@ -71,7 +79,7 @@ make deploy-yield
 - `InitCapitalAdapter` & `MockInitCore/Pools`
 - `CompoundAdapter` & `MockComet` markets
 
-### 5. Deploy Main Controller
+### 6. Deploy Main Controller
 
 The `MainController` orchestrates the workflows.
 

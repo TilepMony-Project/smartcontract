@@ -42,8 +42,8 @@ contract SwapScript is Script {
 
         // 2. Set Initial Rates (1:1 for stablecoins)
         uint256 one = 1e18; // 1e18 precision
-        uint256 idrUsd = 16500e18;
-        uint256 usdIdr = 1e18 / idrUsd; // 1e18 precision // 1e18 precision
+        uint256 usdIdr = 16500e18;
+        uint256 idrUsd = (1e18 * 1e18) / usdIdr; // Invert
 
         _setPairRate(address(fusionXRouter), idrx, usdc, idrUsd);
         _setPairRate(address(fusionXRouter), usdc, idrx, usdIdr);

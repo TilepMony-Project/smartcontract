@@ -59,6 +59,19 @@ deploy-swap:
 		--verify \
 		--etherscan-api-key $(ETHERSCAN_API_KEY)
 
+
+add-liquidity-router:
+	@echo "$(CYAN)💧 [LIQUIDITY] Adding liquidity to routers...$(RESET)"
+	@forge script script/AddLiquidity.s.sol \
+		--rpc-url $(RPC_URL) \
+		--broadcast -vvv
+
+update-rates:
+	@echo "$(CYAN)🔄 [UPDATE] Updating exchange rates for mTokens...$(RESET)"
+	@forge script script/UpdateRates.s.sol \
+		--rpc-url $(RPC_URL) \
+		--broadcast -vvv
+
 deploy-controller:
 	@echo "$(CYAN)🚚 [DEPLOY] Deploying Main Controller...$(RESET)"
 	@forge script script/MainController.s.sol:MainControllerScript \

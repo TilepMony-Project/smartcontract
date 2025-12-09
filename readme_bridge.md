@@ -42,11 +42,37 @@ ICrossChainToken.transferRemote -> Axelar Network
 
 | Chain            | AxelarBridgeRouter                         | AxelarBridgeAdapter                        | Catatan |
 |------------------|--------------------------------------------|--------------------------------------------|---------|
-| Mantle Sepolia   | `0x1111111111111111111111111111111111111111` | `0x2222222222222222222222222222222222222222` | Isi dengan alamat deploy asli saat tersedia. |
-| Base Sepolia     | `0x3333333333333333333333333333333333333333` | `0x4444444444444444444444444444444444444444` | Placeholder untuk memetakan kontrak setelah deployment. |
-| Arbitrum Sepolia | `0x5555555555555555555555555555555555555555` | `0x6666666666666666666666666666666666666666` | Ganti dengan alamat final setelah deploy. |
+| Mantle Sepolia   | `0x891F9B4629DD6fd9814bb6Dda92C0AB27B288818` | `0x713D1A7E7277995f8bc9ae488BD54014e41983e6` | CREATE2, sama di seluruh chain. |
+| Base Sepolia     | `0x891F9B4629DD6fd9814bb6Dda92C0AB27B288818` | `0x713D1A7E7277995f8bc9ae488BD54014e41983e6` | Sama dengan Mantle/Arbitrum. |
+| Arbitrum Sepolia | `0x891F9B4629DD6fd9814bb6Dda92C0AB27B288818` | `0x713D1A7E7277995f8bc9ae488BD54014e41983e6` | Sama dengan Mantle/Base. |
 
 > Gunakan tabel ini sebagai “katalog alamat” supaya tim FE tidak kebingungan saat mengonfigurasi environment atau skrip (mis. `halo/.env`).
+
+> Router dan adapter menggunakan CREATE2 dengan salt tetap (via default CREATE2 factory 0x4e59...); karena bytecode dan salt identik, alamatnya juga identik di semua chain. Jika kontrak sudah ada di chain tertentu, skrip akan otomatis memakai instance tersebut dan melanjutkan konfigurasi token.
+
+## Deploy Contracts
+
+### Persiapan `.env`
+
+1. Salin `.env.example` menjadi `.env`, lalu isi `PRIVATE_KEY` dengan akun deployer yang menyimpan saldo native di jaringan target.
+2. Setiap chain di `chains.json` memiliki prefix environment (contoh: `MANTLE_SEPOLIA`, `BASE_SEPOLIA`, `ARBITRUM_SEPOLIA`). Lengkapi variabel berikut per prefix:
+   - `<PREFIX>_MIDRX_TOKEN`, `<PREFIX>_MUSDC_TOKEN`, `<PREFIX>_MUSDT_TOKEN` yang menunjuk ke kontrak token lintas-chain kompatibel `ICrossChainToken`.
+3. Pastikan RPC & konfigurasi Axelar (`<PREFIX>_RPC_URL`, `<PREFIX>_AXELAR_GATEWAY`, `<PREFIX>_AXELAR_GAS_SERVICE`) sudah benar karena dipakai saat broadcast dan konfigurasi adapter setelah deploy.
+
+### Langkah deploy dengan Foundry
+
+1. Jalankan skrip `script/Bridge.s.sol` menggunakan RPC chain target. Contoh Mantle Sepolia:
+   ```
+   forge script script/Bridge.s.sol --rpc-url $MANTLE_SEPOLIA_RPC_URL --broadcast -vvvv
+   ```
+2. Skrip otomatis:
+   - Membaca prefix chain berdasarkan `block.chainid`.
+   - Deploy `AxelarBridgeRouter` dan mengatur owner langsung ke alamat deployer (`PRIVATE_KEY`).
+   - Deploy `AxelarBridgeAdapter` yang menunjuk ke router yang baru dibuat.
+   - Mengaktifkan setiap token yang alamatnya tersedia pada `<PREFIX>_MIDRX_TOKEN`, `<PREFIX>_MUSDC_TOKEN`, `<PREFIX>_MUSDT_TOKEN`.
+3. Simpan alamat router/adaptor dari log CLI dan perbarui tabel referensi di atas supaya FE, DevOps, dan operator memiliki sumber tunggal.
+
+> Skrip bersifat idempotent untuk daftar token: token yang tidak diisi di `.env` akan dilewati sehingga Anda bisa menjalankan ulang setelah memperbarui alamat token baru.
 
 ## Kontrak Router
 

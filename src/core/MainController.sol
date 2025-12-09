@@ -12,6 +12,7 @@ import {
 import {Ownable} from "openzeppelin-contracts/contracts/access/Ownable.sol";
 
 // Interfaces for interaction
+// Interfaces for interaction
 import {ISwapAggregator} from "../swap/interfaces/ISwapAggregator.sol";
 // YieldRouter doesn't have an interface file yet, so we import the contract or define a minimal interface here.
 // For cleaner code, let's define a minimal interface for YieldRouter interaction.
@@ -21,7 +22,7 @@ interface IYieldRouter {
         address token,
         uint256 amount,
         bytes calldata data
-    ) external returns (uint256);
+    ) external returns (uint256, address);
 
     function withdraw(
         address adapter,
@@ -59,15 +60,32 @@ contract MainController is IMainController, ReentrancyGuard, Ownable {
             }
         }
 
+        // Track the output of the previous action
+        address lastOutputToken = initialToken;
+
         // 2. Loop through actions
         for (uint256 i = 0; i < actions.length; i++) {
-            _executeAction(i, actions[i]);
+            (, address outputToken) = _executeAction(
+                i,
+                actions[i],
+                lastOutputToken
+            );
+            // If the action returned a valid token (or if it kept the same token implicitly)
+            // we update lastOutputToken.
+            // Note: Some actions like TRANSFER might return address(0) if they don't produce new tokens.
+            // But if TRANSFER(address(0)) is used, it consumes the token.
+            // Let's refine the logic: each action SHOULD return what token it holds/outputs.
+            lastOutputToken = outputToken;
         }
 
         emit WorkflowExecuted(msg.sender, actions.length);
     }
 
-    function _executeAction(uint256 index, Action calldata action) internal {
+    function _executeAction(
+        uint256 index,
+        Action calldata action,
+        address previousOutputToken
+    ) internal returns (uint256, address) {
         uint256 inputAmount = 0;
         address inputToken = address(0);
 
@@ -76,14 +94,20 @@ contract MainController is IMainController, ReentrancyGuard, Ownable {
                 action.data,
                 (address, address, address, uint256, uint256, address)
             );
-            inputToken = tokenIn;
+            // Dynamic Token Resolution for SWAP (Optional, but good for consistency)
+            if (tokenIn == address(0)) {
+                inputToken = previousOutputToken;
+            } else {
+                inputToken = tokenIn;
+            }
+
             inputAmount = _calculateInputAmount(
-                tokenIn,
+                inputToken,
                 action.inputAmountPercentage
             );
 
             // Approve Aggregator
-            IERC20(tokenIn).forceApprove(action.targetContract, inputAmount);
+            IERC20(inputToken).forceApprove(action.targetContract, inputAmount);
 
             // Execute Swap
             (, , address tokenOut, , uint256 minAmountOut, address to) = abi
@@ -95,7 +119,7 @@ contract MainController is IMainController, ReentrancyGuard, Ownable {
             uint256 outputAmount = ISwapAggregator(action.targetContract)
                 .swapWithProvider(
                     adapter,
-                    tokenIn,
+                    inputToken,
                     tokenOut,
                     inputAmount,
                     minAmountOut,
@@ -109,25 +133,30 @@ contract MainController is IMainController, ReentrancyGuard, Ownable {
                 inputAmount,
                 outputAmount
             );
+            return (outputAmount, tokenOut);
         } else if (action.actionType == ActionType.YIELD) {
             (address adapter, address token, , bytes memory adapterData) = abi
                 .decode(action.data, (address, address, uint256, bytes));
-            inputToken = token;
+
+            if (token == address(0)) {
+                inputToken = previousOutputToken;
+            } else {
+                inputToken = token;
+            }
+
             inputAmount = _calculateInputAmount(
-                token,
+                inputToken,
                 action.inputAmountPercentage
             );
 
             // Approve Router
-            IERC20(token).forceApprove(action.targetContract, inputAmount);
+            IERC20(inputToken).forceApprove(action.targetContract, inputAmount);
 
             // Execute Deposit
-            uint256 outputAmount = IYieldRouter(action.targetContract).deposit(
-                adapter,
-                token,
-                inputAmount,
-                adapterData
-            );
+            (uint256 outputAmount, address shareToken) = IYieldRouter(
+                action.targetContract
+            ).deposit(adapter, inputToken, inputAmount, adapterData);
+
             emit ActionExecuted(
                 index,
                 action.actionType,
@@ -135,15 +164,24 @@ contract MainController is IMainController, ReentrancyGuard, Ownable {
                 inputAmount,
                 outputAmount
             );
+            // Return the share token so next action can use it
+            return (outputAmount, shareToken);
         } else if (action.actionType == ActionType.TRANSFER) {
             (address token) = abi.decode(action.data, (address));
-            inputToken = token;
+
+            // Dynamic Token Resolution
+            if (token == address(0)) {
+                inputToken = previousOutputToken;
+            } else {
+                inputToken = token;
+            }
+
             inputAmount = _calculateInputAmount(
-                token,
+                inputToken,
                 action.inputAmountPercentage
             );
 
-            IERC20(token).safeTransfer(action.targetContract, inputAmount);
+            IERC20(inputToken).safeTransfer(action.targetContract, inputAmount);
             emit ActionExecuted(
                 index,
                 action.actionType,
@@ -151,6 +189,10 @@ contract MainController is IMainController, ReentrancyGuard, Ownable {
                 inputAmount,
                 0
             );
+            // Transfer consumes the token (sends it away).
+            // We return address(0) or potentially the remaining token if typical usage?
+            // Usually if we transfer, we don't have it anymore for chaining unless we split.
+            return (0, inputToken);
         } else if (action.actionType == ActionType.MINT) {
             (address token, uint256 amount) = abi.decode(
                 action.data,
@@ -159,6 +201,8 @@ contract MainController is IMainController, ReentrancyGuard, Ownable {
             inputToken = token;
             IMintableToken(token).giveMe(amount);
             emit ActionExecuted(index, action.actionType, token, 0, amount);
+            // Mint makes 'token' available
+            return (amount, token);
         } else if (action.actionType == ActionType.YIELD_WITHDRAW) {
             (
                 address adapter,
@@ -171,28 +215,50 @@ contract MainController is IMainController, ReentrancyGuard, Ownable {
                     (address, address, address, uint256, bytes)
                 );
 
-            inputToken = shareToken;
+            if (shareToken == address(0)) {
+                inputToken = previousOutputToken;
+            } else {
+                inputToken = shareToken;
+            }
 
-            // Calculate input amount based on USER'S balance
-            uint256 userShareBalance = IERC20(shareToken).balanceOf(msg.sender);
-            inputAmount =
-                (userShareBalance * action.inputAmountPercentage) /
-                10000;
+            // Calculate input amount based on USER'S balance is weird if we are chaining.
+            // If we are chaining, we should use 'this' balance.
+            // BUT, the existing logic pulled from USER.
+            // "Pull shares from User" logic (lines 182-187) assumes user holds shares.
+            // If we are chaining, 'this' holds shares.
+            // Let's support both? Or rather, if inputToken is in 'this', use it.
 
-            // Pull shares from User
-            IERC20(shareToken).safeTransferFrom(
-                msg.sender,
-                address(this),
-                inputAmount
-            );
+            // For now, let's keep the existing logic for non-chained (explicit shareToken)
+            // But if shareToken is address(0), we assume it's in 'this'.
+
+            if (shareToken == address(0)) {
+                // It's already in the contract from previous step
+                inputAmount = _calculateInputAmount(
+                    inputToken,
+                    action.inputAmountPercentage
+                );
+            } else {
+                // Original logic: Pull from user
+                uint256 userShareBalance = IERC20(shareToken).balanceOf(
+                    msg.sender
+                );
+                inputAmount =
+                    (userShareBalance * action.inputAmountPercentage) /
+                    10000;
+                IERC20(shareToken).safeTransferFrom(
+                    msg.sender,
+                    address(this),
+                    inputAmount
+                );
+            }
 
             // Approve Router
-            IERC20(shareToken).forceApprove(action.targetContract, inputAmount);
+            IERC20(inputToken).forceApprove(action.targetContract, inputAmount);
 
             // Execute Withdraw
             uint256 outputAmount = IYieldRouter(action.targetContract).withdraw(
                 adapter,
-                shareToken,
+                inputToken, // shareToken
                 underlyingToken,
                 inputAmount,
                 adapterData
@@ -205,7 +271,10 @@ contract MainController is IMainController, ReentrancyGuard, Ownable {
                 inputAmount,
                 outputAmount
             );
+            // Returns underlying token
+            return (outputAmount, underlyingToken);
         }
+        return (0, address(0));
     }
 
     function _calculateInputAmount(

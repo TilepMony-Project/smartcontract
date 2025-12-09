@@ -60,16 +60,20 @@ contract FlowIntegrationTest is Test {
         // Set Rate: 1 USDT = 16500 IDRX
         // USDT decimals = 6, IDRX decimals = 6
         // Rate = 16500
-        fusionXRouter.setRate(address(usdt), address(idrx), 16500);
+        fusionXRouter.setRate(address(usdt), address(idrx), 16500 * 1e18);
 
         // 4. Deploy Compound System (Yield)
-        mockComet = new MockComet(address(idrx));
+        mockComet = new MockComet(address(idrx), "Compound Mock", "cMOCK");
         compoundAdapter = new CompoundAdapter(address(mockComet));
 
         // 5. Deploy Init Capital System (Yield)
         initCore = new MockInitCore();
         // LendingPool needs to be for IDRX
-        lendingPool = new MockLendingPool(address(idrx));
+        lendingPool = new MockLendingPool(
+            address(idrx),
+            "Init Yield IDRX",
+            "inIDRX"
+        );
         initAdapter = new InitCapitalAdapter(address(initCore));
         initAdapter.setPool(address(idrx), address(lendingPool));
 
@@ -317,8 +321,8 @@ contract FlowIntegrationTest is Test {
 
         assertEq(
             sharesUser2,
-            100 ether,
-            "User2 should hold Init Shares (Mock hardcoded 100 ether)"
+            expectedIdrx,
+            "User2 should hold Init Shares (1:1 with Underlying)"
         );
 
         vm.stopPrank();

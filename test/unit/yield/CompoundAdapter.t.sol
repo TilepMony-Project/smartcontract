@@ -16,7 +16,7 @@ contract CompoundAdapterTest is Test {
 
     function setUp() public {
         token = new MockERC20("USDC", "USDC", 6);
-        comet = new MockComet(address(token));
+        comet = new MockComet(address(token), "Compound Mock", "cMOCK");
         router = new YieldRouter();
 
         adapter = new CompoundAdapter(address(comet));
@@ -35,7 +35,7 @@ contract CompoundAdapterTest is Test {
         uint256 amount = 100 * 1e6;
 
         vm.prank(user);
-        uint256 amountOut = router.deposit(
+        (uint256 amountOut, ) = router.deposit(
             address(adapter),
             address(token),
             amount,

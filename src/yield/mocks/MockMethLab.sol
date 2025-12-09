@@ -19,7 +19,11 @@ contract MockMethLab is IMethLab, ERC20 {
 
     error FundsLocked(uint256 unlockTime);
 
-    constructor(address _asset) ERC20("MethLab Mock", "mMOCK") {
+    constructor(
+        address _asset,
+        string memory name,
+        string memory symbol
+    ) ERC20(name, symbol) {
         ASSET = IERC20(_asset);
     }
 

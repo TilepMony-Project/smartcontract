@@ -43,10 +43,10 @@ contract WithdrawFlowIntegrationTest is Test {
         // 3. Deploy Swap System
         fusionXRouter = new FusionXRouter();
         fusionXAdapter = new FusionXAdapter(address(fusionXRouter));
-        fusionXRouter.setRate(address(usdt), address(idrx), 16500);
+        fusionXRouter.setRate(address(usdt), address(idrx), 16500 * 1e18);
 
         // 4. Deploy Yield System (Compound)
-        mockComet = new MockComet(address(idrx));
+        mockComet = new MockComet(address(idrx), "Compound Mock", "cMOCK");
         compoundAdapter = new CompoundAdapter(address(mockComet));
 
         // 5. Whitelist Adapters

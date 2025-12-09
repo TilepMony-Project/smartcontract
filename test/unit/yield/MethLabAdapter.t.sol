@@ -16,7 +16,7 @@ contract MethLabAdapterTest is Test {
 
     function setUp() public {
         usdc = new MockERC20("USDC", "USDC", 6);
-        methLabVault = new MockMethLab(address(usdc));
+        methLabVault = new MockMethLab(address(usdc), "MethLab Mock", "mMOCK");
         adapter = new MethLabAdapter();
         router = new YieldRouter();
 
@@ -44,7 +44,7 @@ contract MethLabAdapterTest is Test {
         );
 
         vm.prank(user);
-        uint256 shares = router.deposit(
+        (uint256 shares, ) = router.deposit(
             address(adapter),
             address(usdc),
             amount,
@@ -70,7 +70,7 @@ contract MethLabAdapterTest is Test {
         uint256 amount = 1000 * 1e6;
 
         vm.prank(user);
-        uint256 shares = router.deposit(
+        (uint256 shares, ) = router.deposit(
             address(adapter),
             address(usdc),
             amount,
@@ -129,7 +129,7 @@ contract MethLabAdapterTest is Test {
         uint256 amount = 1000 * 1e6;
 
         vm.prank(user);
-        uint256 shares = router.deposit(
+        (uint256 shares, ) = router.deposit(
             address(adapter),
             address(usdc),
             amount,

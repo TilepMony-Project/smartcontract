@@ -70,10 +70,14 @@ contract YieldRouterTest is Test {
 
     function setUp() public {
         token = new MockERC20();
-        comet = new MockComet(address(token));
+        comet = new MockComet(address(token), "Compound Mock", "cMOCK");
         initCore = new MockInitCore();
-        lendingPool = new MockLendingPool(address(token));
-        methVault = new MockMethLab(address(token));
+        lendingPool = new MockLendingPool(
+            address(token),
+            "Init Yield",
+            "inMOCK"
+        );
+        methVault = new MockMethLab(address(token), "MethLab Mock", "mMOCK");
 
         router = new YieldRouter();
 
@@ -97,6 +101,8 @@ contract YieldRouterTest is Test {
         token.mint(address(comet), 10000 ether);
         // Mint tokens to mock lending pool for withdrawal
         token.mint(address(lendingPool), 10000 ether);
+        // Sync shares with assets for the new dynamic mock logic (1:1)
+        lendingPool.mint(address(this), 10000 ether);
     }
 
     function testGenericDeposit() public {
@@ -104,7 +110,7 @@ contract YieldRouterTest is Test {
         vm.startPrank(user);
         token.approve(address(router), 100 ether);
 
-        uint256 amountOut = router.deposit(
+        (uint256 amountOut, ) = router.deposit(
             address(methAdapter),
             address(token),
             100 ether,
@@ -112,6 +118,7 @@ contract YieldRouterTest is Test {
         );
 
         assertEq(amountOut, 100 ether);
+        // Expect balance to increase by 100 ether (10000 + 100)
         assertEq(token.balanceOf(address(methVault)), 100 ether);
         vm.stopPrank();
     }

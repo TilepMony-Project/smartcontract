@@ -21,10 +21,26 @@ contract MockInitCore is IInitCore {
         address pool,
         address receiver
     ) external override returns (uint256) {
-        // Mint 100 ether shares (assuming shares are always 18 decimals)
-        uint256 amount = 100 ether;
-        MockLendingPool(pool).mint(receiver, amount);
-        return amount;
+        // Dynamic Logic with Exchange Rate
+        // 1. Get total underlying assets in pool
+        address underlying = ILendingPool(pool).underlyingToken();
+        uint256 totalAssets = IERC20(underlying).balanceOf(pool);
+
+        // 2. Get total shares minted
+        uint256 totalShares = MockLendingPool(pool).totalSupply();
+        uint256 exchangeRate = MockLendingPool(pool).exchangeRate();
+
+        // 3. Calculate expected shares based on total assets and rate
+        // shares = totalAssets * 1e18 / rate
+        uint256 requiredShares = (totalAssets * 1e18) / exchangeRate;
+
+        if (requiredShares <= totalShares) return 0; // No new deposit
+
+        uint256 amountToMint = requiredShares - totalShares;
+
+        // 4. Mint shares to receiver
+        MockLendingPool(pool).mint(receiver, amountToMint);
+        return amountToMint;
     }
 
     function burnTo(
@@ -32,11 +48,20 @@ contract MockInitCore is IInitCore {
         address receiver
     ) external override returns (uint256) {
         address underlying = ILendingPool(pool).underlyingToken();
-        uint8 decimals = IERC20Metadata(underlying).decimals();
 
-        uint256 amount = 100 * (10 ** decimals);
+        // 1. Get shares held by the Pool (User/Router transfers shares to Pool before burning)
+        uint256 sharesToBurn = MockLendingPool(pool).balanceOf(pool);
+        uint256 exchangeRate = MockLendingPool(pool).exchangeRate();
 
-        IERC20(underlying).safeTransferFrom(pool, receiver, amount);
-        return amount;
+        // 2. Burn shares
+        MockLendingPool(pool).burn(pool, sharesToBurn);
+
+        // 3. Return underlying assets
+        // assets = shares * rate / 1e18
+        uint256 amountToReturn = (sharesToBurn * exchangeRate) / 1e18;
+
+        IERC20(underlying).safeTransferFrom(pool, receiver, amountToReturn);
+
+        return amountToReturn;
     }
 }

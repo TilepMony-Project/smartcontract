@@ -23,7 +23,11 @@ contract InitCapitalAdapterTest is Test {
     function setUp() public {
         token = new MockERC20("USDT", "USDT", 6);
         initCore = new MockInitCore();
-        lendingPool = new MockLendingPool(address(token));
+        lendingPool = new MockLendingPool(
+            address(token),
+            "Init Yield",
+            "inMOCK"
+        );
         router = new YieldRouter();
 
         adapter = new InitCapitalAdapter(address(initCore));
@@ -33,6 +37,8 @@ contract InitCapitalAdapterTest is Test {
 
         token.mint(user, 10000 * 1e6);
         token.mint(address(lendingPool), 10000 * 1e6); // Liquidity for withdrawals
+        // Sync shares
+        lendingPool.mint(address(this), 10000 * 1e6);
 
         vm.prank(user);
         token.approve(address(router), type(uint256).max);
@@ -47,7 +53,7 @@ contract InitCapitalAdapterTest is Test {
         uint256 amount = 100 * 1e6;
 
         vm.prank(user);
-        uint256 amountOut = router.deposit(
+        (uint256 amountOut, ) = router.deposit(
             address(adapter),
             address(token),
             amount,
@@ -57,8 +63,8 @@ contract InitCapitalAdapterTest is Test {
         console.log("Amount Deposited:", amount);
         console.log("Amount Out (Shares):", amountOut);
 
-        // Init Capital Mock mints 1:1 shares but mock returns fixed 100 ether
-        assertEq(amountOut, 100 ether);
+        // Init Capital Mock now uses dynamic 1:1 shares
+        assertEq(amountOut, amount);
         // Token should be in LendingPool
         assertEq(token.balanceOf(address(lendingPool)), amount + 10000 * 1e6);
     }
@@ -83,7 +89,7 @@ contract InitCapitalAdapterTest is Test {
             address(adapter),
             address(lendingPool),
             address(token),
-            100 ether,
+            amount, // Withdraw actual amount deposited
             ""
         );
         vm.stopPrank();

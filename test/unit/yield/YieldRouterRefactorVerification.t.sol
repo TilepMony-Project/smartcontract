@@ -56,7 +56,7 @@ contract YieldRouterRefactorVerification is Test {
 
     function setUp() public {
         token = new MockERC20();
-        comet = new MockComet(address(token));
+        comet = new MockComet(address(token), "Compound Mock", "cMOCK");
         router = new YieldRouter();
 
         compoundAdapter = new CompoundAdapter(address(comet));

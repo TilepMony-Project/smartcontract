@@ -61,7 +61,7 @@ contract YieldRouter is Ownable {
         address token,
         uint256 amount,
         bytes calldata data
-    ) external onlyWhitelisted(adapter) returns (uint256) {
+    ) external onlyWhitelisted(adapter) returns (uint256, address) {
         // 1. Transfer tokens from user to this router
         IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
 
@@ -74,12 +74,21 @@ contract YieldRouter is Ownable {
             .deposit(token, amount, data);
 
         // 4. Transfer receipt tokens (shares) back to user
+        // NOTE: We do NOT transfer back to user automatically anymore if the MainController
+        // is the caller, because MainController wants to hold it for the next action.
+        // BUT, YieldRouter is designed to be used by EOAs too.
+        // The original issue was MainController *holding* it but not knowing *what* it held.
+        // If we want to support dynamic transfer, MainController should keep it.
+        // IF we transfer it here, MainController receives it.
+
+        // Wait, if MainController calls this, MainController IS msg.sender.
+        // So this transfer sends it to MainController.
         if (shareToken != address(0) && amountOut > 0) {
             IERC20(shareToken).safeTransfer(msg.sender, amountOut);
         }
 
         emit Deposited(msg.sender, adapter, token, amount, amountOut);
-        return amountOut;
+        return (amountOut, shareToken);
     }
 
     /**

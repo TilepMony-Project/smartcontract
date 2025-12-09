@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import {IComet} from "src/yield/interfaces/IComet.sol";
+import {IComet} from "../interfaces/IComet.sol";
 
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {
@@ -18,8 +18,19 @@ contract MockComet is MockERC20, IComet {
     uint64 public supplyRate = 1e9; // 1e9 per second (mock)
     uint256 public utilization = 50e16; // 50%
 
-    constructor(address _asset) MockERC20("Compound Mock", "cMOCK", 6) {
+    // Exchange Rate (1e18 = 1:1)
+    uint256 public exchangeRate = 1e18;
+
+    constructor(
+        address _asset,
+        string memory name,
+        string memory symbol
+    ) MockERC20(name, symbol, 6) {
         ASSET = _asset;
+    }
+
+    function setExchangeRate(uint256 _rate) external {
+        exchangeRate = _rate;
     }
 
     function baseToken() external view override returns (address) {
@@ -30,18 +41,22 @@ contract MockComet is MockERC20, IComet {
         // Pull assets
         IERC20(asset).safeTransferFrom(msg.sender, address(this), amount);
 
+        // Calculate Shares: shares = assets / rate
+        uint256 shares = (amount * 1e18) / exchangeRate;
+
         // Mint Comet tokens (shares) to user
-        // Note: In Compound V3, base token supply logic mints cTokens to user.
-        // We inherit MockERC20 so we can mint.
-        _mint(msg.sender, amount); // 1:1 for simplicity
+        _mint(msg.sender, shares);
     }
 
     function withdraw(address asset, uint256 amount) external override {
-        // Burn Comet tokens from user
-        _burn(msg.sender, amount); // 1:1
+        // Burn Comet tokens (shares)
+        _burn(msg.sender, amount);
+
+        // Calculate Assets: assets = shares * rate
+        uint256 assets = (amount * exchangeRate) / 1e18;
 
         // Transfer assets back to user
-        IERC20(asset).safeTransfer(msg.sender, amount);
+        IERC20(asset).safeTransfer(msg.sender, assets);
     }
 
     function getSupplyRate(uint256) external view override returns (uint64) {

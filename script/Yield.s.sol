@@ -63,7 +63,11 @@ contract YieldScript is Script {
         address token,
         string memory symbol
     ) internal {
-        MockMethLab vault = new MockMethLab(token);
+        MockMethLab vault = new MockMethLab(
+            token,
+            string.concat("MethLab Yield ", symbol),
+            string.concat("ml", symbol)
+        );
         adapter.setVault(token, address(vault));
         console.log(
             string.concat("MethLab Vault ", symbol, " deployed at:"),
@@ -79,7 +83,11 @@ contract YieldScript is Script {
         address token,
         string memory symbol
     ) internal {
-        MockLendingPool pool = new MockLendingPool(token);
+        MockLendingPool pool = new MockLendingPool(
+            token,
+            string.concat("Init Capital Yield ", symbol),
+            string.concat("in", symbol)
+        );
         adapter.setPool(token, address(pool));
         console.log(
             string.concat("InitCapital Pool ", symbol, " deployed at:"),
@@ -96,7 +104,11 @@ contract YieldScript is Script {
         address token,
         string memory symbol
     ) internal {
-        MockComet comet = new MockComet(token);
+        MockComet comet = new MockComet(
+            token,
+            string.concat("Compound Yield ", symbol),
+            string.concat("cm", symbol)
+        );
         CompoundAdapter adapter = new CompoundAdapter(address(comet));
         router.setAdapterWhitelist(address(adapter), true);
 

@@ -55,18 +55,13 @@ contract YieldAccrualTest is Test {
         // Needs +100 inject.
 
         // Mock Env Vars for Script
-        vm.setEnv("TARGET_VAULT", vm.toString(address(vault)));
-        vm.setEnv("TARGET_TOKEN", vm.toString(address(usdc)));
-        vm.setEnv("NEW_RATE", vm.toString(uint256(1.1e18)));
-        vm.setEnv("INJECT_AMOUNT", vm.toString(uint256(100 * 1e6)));
-        // Mock Private Key (arbitrary, script needs it)
-        vm.setEnv(
-            "PRIVATE_KEY",
-            "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
+        // Run Script directly with args
+        injectorScript.run(
+            address(vault),
+            address(usdc),
+            uint256(1.1e18),
+            uint256(100 * 1e6)
         );
-
-        // Run Script
-        injectorScript.run();
 
         // Verify Script Effects
         assertEq(vault.exchangeRate(), 1.1e18, "Exchange rate did not update");

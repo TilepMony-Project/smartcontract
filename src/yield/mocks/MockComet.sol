@@ -7,6 +7,9 @@ import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {
     SafeERC20
 } from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
+import {
+    IERC20Metadata
+} from "openzeppelin-contracts/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {MockERC20} from "./MockERC20.sol";
 
 contract MockComet is MockERC20, IComet {
@@ -25,7 +28,7 @@ contract MockComet is MockERC20, IComet {
         address _asset,
         string memory name,
         string memory symbol
-    ) MockERC20(name, symbol, 6) {
+    ) MockERC20(name, symbol, IERC20Metadata(_asset).decimals()) {
         ASSET = _asset;
     }
 

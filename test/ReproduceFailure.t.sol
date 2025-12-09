@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import "forge-std/Test.sol";
+import {Test, console} from "forge-std/Test.sol";
 import {
     SafeERC20
 } from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -21,7 +21,7 @@ contract ReproduceFailure is Test {
         // Log the selector
     }
 
-    function test_verifySelector() public {
+    function test_verifySelector() public pure {
         bytes4 selector = bytes4(
             keccak256("ERC20InsufficientBalance(address,uint256,uint256)")
         );

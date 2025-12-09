@@ -24,31 +24,26 @@
 
 ## Yield System
 
-### Core
-- **YieldRouter**: `0x89B84a353f4d366Ba67EA32afFCbc6fb40F8E0b1`
+### Helper Contracts
+- **YieldRouter**: `0x3c85f1c910c895ab6863398ef79af440a91678e7`
 
 ### MethLab
-- **MethLabAdapter**: `0x762f805B7512947038C470927684860169390012`
-- **Vaults**:
-    - **IDRX**: `0x32f8efDd8F2319ec8F62A74D01f9E3d79328e09B`
-    - **USDC**: `0xafC45Bdd187A741Cef85E1105A7e7E4a53eBe7Bb`
-    - **USDT**: `0xDDD8BBE6E29cFecBeaB945078C4aE5673F0227dc`
+- **MethLabAdapter**: `0x62de03ea9ab956daef35eef3654d7b3c54bc7b74`
+- **MethLab Vault (IDRX)**: `0x1175edf09d9f9e02d0bde77747362a31875ec00f`
+- **MethLab Vault (USDC)**: `0x53f8e7f8d44a7e1e5ab9ae0d47cab80c435ae7cd`
+- **MethLab Vault (USDT)**: `0xd2e6881873ede0301c194938d7302918eb97102a`
 
 ### Init Capital
-- **InitCapitalAdapter**: `0x240246e05859932eA6464b6B53f62fbAF746d4C0`
-- **MockInitCore**: `0x5a397a4E50Da9B21198E487cf375E9a7b1B8676d`
-- **Pools**:
-    - **IDRX**: `0x8C2922D00cBFa2896B5dF47946efB687e7927335`
-    - **USDC**: `0x9D2D1499c97A66805D0739EC38594Bd6Bc73528a`
-    - **USDT**: `0xC1326E26612d8A619Ec05C27D7B988B430A7C4Cd`
+- **InitCapitalAdapter**: `0xb29e7e19eda483dc20ad0dfb251295aaeca1d814`
+- **MockInitCore**: `0xa68685ad592de64b4a60062babb01a9bdab8d691`
+- **MockLendingPool (IDRX)**: `0x6a3dac9774ae55f606827f72467309e3e436304b`
+- **MockLendingPool (USDC)**: `0x936acc4e251733b9e48d8262576ac4c5886ab6f1`
+- **MockLendingPool (USDT)**: `0x96dab13f77fe5e7f7da6efb12a12be1c428454e3`
 
-### Compound
-- **IDRX**:
-    - **Comet**: `0x6eDe8564c9CC37125CB506d341E81bbB00802848`
-    - **Adapter**: `0x0330acf9939DFBc4F14Ac7B21fff345A0044a17B`
-- **USDC**:
-    - **Comet**: `0xb29b9ae64585a7133D4838BA75944ECF093dcddE`
-    - **Adapter**: `0x6930E59054EF246c607244685dBcad835F3D9881`
-- **USDT**:
-    - **Comet**: `0x83b0033801db575C3309E2C3E8cd2262423Ec484`
-    - **Adapter**: `0x4211199d1fDB3fbd7c97888487407E82B4Dd9Eb7`
+### Compound Finance
+- **MockComet (IDRX)**: `0xec0759577302f89f26adc4224153cfbd2c579fb0`
+- **CompoundAdapter (IDRX)**: `0x06632510dc19ecbdb28f0f6333c82ac582b3a8de`
+- **MockComet (USDC)**: `0x77ec0cd2bbd6256b719c3eb9cfb5a0a9f499b65e`
+- **CompoundAdapter (USDC)**: `0xfc2f66ff3444dc056968a3d51e6d7ac4e67a40bb`
+- **MockComet (USDT)**: `0x18165d25c62d04b2cf1f34ff838cca589e6d9967`
+- **CompoundAdapter (USDT)**: `0x540ec22ebf1184047600a68482b10f2f65721b36`

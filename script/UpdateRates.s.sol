@@ -13,9 +13,9 @@ contract UpdateRates is Script {
     address constant VERTEX_ROUTER = 0xd64dADee7A042e96aa61514502C5545922627A26;
 
     // NEW Token Addresses (mTokens)
-    address constant mIDRX = 0xc39DfE81DcAd49F1Da4Ff8d41f723922Febb75dc;
-    address constant mUSDC = 0x681db03Ef13e37151e9fd68920d2c34273194379;
-    address constant mUSDT = 0x9a82fC0c460A499b6ce3d6d8A29835a438B5Ec28;
+    address constant M_IDRX = 0xc39DfE81DcAd49F1Da4Ff8d41f723922Febb75dc;
+    address constant M_USDC = 0x681db03Ef13e37151e9fd68920d2c34273194379;
+    address constant M_USDT = 0x9a82fC0c460A499b6ce3d6d8A29835a438B5Ec28;
 
     function run() public {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
@@ -28,30 +28,30 @@ contract UpdateRates is Script {
         console.log("Updating Rates for mTokens...");
 
         // 1. FusionX
-        ISwapRouter(FUSIONX_ROUTER).setRate(mIDRX, mUSDC, idrUsd);
-        ISwapRouter(FUSIONX_ROUTER).setRate(mUSDC, mIDRX, usdIdr);
-        ISwapRouter(FUSIONX_ROUTER).setRate(mIDRX, mUSDT, idrUsd);
-        ISwapRouter(FUSIONX_ROUTER).setRate(mUSDT, mIDRX, usdIdr);
-        ISwapRouter(FUSIONX_ROUTER).setRate(mUSDC, mUSDT, one);
-        ISwapRouter(FUSIONX_ROUTER).setRate(mUSDT, mUSDC, one);
+        ISwapRouter(FUSIONX_ROUTER).setRate(M_IDRX, M_USDC, idrUsd);
+        ISwapRouter(FUSIONX_ROUTER).setRate(M_USDC, M_IDRX, usdIdr);
+        ISwapRouter(FUSIONX_ROUTER).setRate(M_IDRX, M_USDT, idrUsd);
+        ISwapRouter(FUSIONX_ROUTER).setRate(M_USDT, M_IDRX, usdIdr);
+        ISwapRouter(FUSIONX_ROUTER).setRate(M_USDC, M_USDT, one);
+        ISwapRouter(FUSIONX_ROUTER).setRate(M_USDT, M_USDC, one);
         console.log("FusionX Rates Updated");
 
         // 2. MerchantMoe
-        ISwapRouter(MERCHANT_MOE_ROUTER).setRate(mIDRX, mUSDC, idrUsd);
-        ISwapRouter(MERCHANT_MOE_ROUTER).setRate(mUSDC, mIDRX, usdIdr);
-        ISwapRouter(MERCHANT_MOE_ROUTER).setRate(mIDRX, mUSDT, idrUsd);
-        ISwapRouter(MERCHANT_MOE_ROUTER).setRate(mUSDT, mIDRX, usdIdr);
-        ISwapRouter(MERCHANT_MOE_ROUTER).setRate(mUSDC, mUSDT, one);
-        ISwapRouter(MERCHANT_MOE_ROUTER).setRate(mUSDT, mUSDC, one);
+        ISwapRouter(MERCHANT_MOE_ROUTER).setRate(M_IDRX, M_USDC, idrUsd);
+        ISwapRouter(MERCHANT_MOE_ROUTER).setRate(M_USDC, M_IDRX, usdIdr);
+        ISwapRouter(MERCHANT_MOE_ROUTER).setRate(M_IDRX, M_USDT, idrUsd);
+        ISwapRouter(MERCHANT_MOE_ROUTER).setRate(M_USDT, M_IDRX, usdIdr);
+        ISwapRouter(MERCHANT_MOE_ROUTER).setRate(M_USDC, M_USDT, one);
+        ISwapRouter(MERCHANT_MOE_ROUTER).setRate(M_USDT, M_USDC, one);
         console.log("MerchantMoe Rates Updated");
 
         // 3. Vertex (Stable-Stable)
-        ISwapRouter(VERTEX_ROUTER).setRate(mUSDC, mUSDT, one);
-        ISwapRouter(VERTEX_ROUTER).setRate(mUSDT, mUSDC, one);
-        ISwapRouter(VERTEX_ROUTER).setRate(mIDRX, mUSDC, idrUsd);
-        ISwapRouter(VERTEX_ROUTER).setRate(mUSDC, mIDRX, usdIdr);
-        ISwapRouter(VERTEX_ROUTER).setRate(mIDRX, mUSDT, idrUsd);
-        ISwapRouter(VERTEX_ROUTER).setRate(mUSDT, mIDRX, usdIdr);
+        ISwapRouter(VERTEX_ROUTER).setRate(M_USDC, M_USDT, one);
+        ISwapRouter(VERTEX_ROUTER).setRate(M_USDT, M_USDC, one);
+        ISwapRouter(VERTEX_ROUTER).setRate(M_IDRX, M_USDC, idrUsd);
+        ISwapRouter(VERTEX_ROUTER).setRate(M_USDC, M_IDRX, usdIdr);
+        ISwapRouter(VERTEX_ROUTER).setRate(M_IDRX, M_USDT, idrUsd);
+        ISwapRouter(VERTEX_ROUTER).setRate(M_USDT, M_IDRX, usdIdr);
         console.log("Vertex Rates Updated");
 
         vm.stopBroadcast();

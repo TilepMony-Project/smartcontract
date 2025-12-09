@@ -2,13 +2,16 @@
 pragma solidity ^0.8.19;
 
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
-import {ERC20} from "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
+import {
+    IERC20Metadata
+} from "openzeppelin-contracts/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {
     SafeERC20
 } from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IMethLab} from "../interfaces/IMethLab.sol";
+import {MockERC20} from "./MockERC20.sol";
 
-contract MockMethLab is IMethLab, ERC20 {
+contract MockMethLab is IMethLab, MockERC20 {
     using SafeERC20 for IERC20;
 
     IERC20 public immutable ASSET;
@@ -23,7 +26,7 @@ contract MockMethLab is IMethLab, ERC20 {
         address _asset,
         string memory name,
         string memory symbol
-    ) ERC20(name, symbol) {
+    ) MockERC20(name, symbol, IERC20Metadata(_asset).decimals()) {
         ASSET = IERC20(_asset);
     }
 

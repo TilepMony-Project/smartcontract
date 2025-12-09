@@ -31,13 +31,13 @@ contract CheckRouterBalance is Script {
             console.log("\n--- Checking", name, "Router ---");
             console.log("Address:", router);
 
-            uint256 balIDRX = IERC20(IDRX).balanceOf(router);
-            uint256 balUSDC = IERC20(USDC).balanceOf(router);
-            uint256 balUSDT = IERC20(USDT).balanceOf(router);
+            uint256 balIdrx = IERC20(IDRX).balanceOf(router);
+            uint256 balUsdc = IERC20(USDC).balanceOf(router);
+            uint256 balUsdt = IERC20(USDT).balanceOf(router);
 
-            console.log("IDRX Balance:", balIDRX);
-            console.log("USDC Balance:", balUSDC);
-            console.log("USDT Balance:", balUSDT);
+            console.log("IDRX Balance:", balIdrx);
+            console.log("USDC Balance:", balUsdc);
+            console.log("USDT Balance:", balUsdt);
         }
     }
 }

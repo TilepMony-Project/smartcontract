@@ -26,7 +26,16 @@ contract YieldLiquidityInjector is Script {
         }
 
         vm.startBroadcast(deployerPrivateKey);
+        run(targetVault, targetToken, newRate, injectAmount);
+        vm.stopBroadcast();
+    }
 
+    function run(
+        address targetVault,
+        address targetToken,
+        uint256 newRate,
+        uint256 injectAmount
+    ) public {
         console.log("--- Yield Liquidity Injector ---");
         console.log("Target Vault:", targetVault);
         console.log("Target Token:", targetToken);
@@ -34,7 +43,6 @@ contract YieldLiquidityInjector is Script {
         console.log("New Rate:", newRate);
 
         // 1. Inject Liquidity (Mint to Vault)
-        // Note: Assumes the token is a MockERC20 with public mint/giveMe
         try MockERC20(targetToken).mint(targetVault, injectAmount) {
             console.log("Success: Minted liquidity to vault.");
         } catch {
@@ -42,7 +50,7 @@ contract YieldLiquidityInjector is Script {
                 "Warning: Failed to mint directly. Attempting transfer..."
             );
             // Fallback: If deployed token isn't mock-mintable by us, try transfer
-            // (Requires deployer to have balance)
+            // (Requires deployer to have balance - caller must handle broadcast/prank)
             try IERC20(targetToken).transfer(targetVault, injectAmount) {
                 console.log("Success: Transferred liquidity to vault.");
             } catch {
@@ -59,6 +67,5 @@ contract YieldLiquidityInjector is Script {
                 "Error: Failed to set exchange rate. Is the target a valid Mock?"
             );
         }
-        vm.stopBroadcast();
     }
 }

@@ -10,10 +10,6 @@ import {
 import {ILendingPool} from "../../interfaces/initCore/ILendingPool.sol";
 import {MockLendingPool} from "./MockLendingPool.sol";
 
-import {
-    IERC20Metadata
-} from "openzeppelin-contracts/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-
 contract MockInitCore is IInitCore {
     using SafeERC20 for IERC20;
 

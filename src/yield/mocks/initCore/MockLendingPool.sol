@@ -4,6 +4,10 @@ pragma solidity ^0.8.19;
 import {ILendingPool} from "../../interfaces/initCore/ILendingPool.sol";
 import {MockERC20} from "../MockERC20.sol";
 
+import {
+    IERC20Metadata
+} from "openzeppelin-contracts/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+
 contract MockLendingPool is ILendingPool, MockERC20 {
     address public override underlyingToken;
     uint256 public supplyRate;
@@ -13,7 +17,7 @@ contract MockLendingPool is ILendingPool, MockERC20 {
         address _underlyingToken,
         string memory name,
         string memory symbol
-    ) MockERC20(name, symbol, 18) {
+    ) MockERC20(name, symbol, IERC20Metadata(_underlyingToken).decimals() + 8) {
         underlyingToken = _underlyingToken;
     }
 

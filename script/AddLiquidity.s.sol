@@ -53,15 +53,24 @@ contract AddLiquidity is Script {
 
             // USDC
             MockIDRXCrossChain(USDC).giveMe(1000000 * 1e6);
-            MockIDRXCrossChain(USDC).transfer(router, 1000000 * 1e6);
+            require(
+                MockIDRXCrossChain(USDC).transfer(router, 1000000 * 1e6),
+                "USDC Transfer failed"
+            );
 
             // USDT
             MockIDRXCrossChain(USDT).giveMe(1000000 * 1e6);
-            MockIDRXCrossChain(USDT).transfer(router, 1000000 * 1e6);
+            require(
+                MockIDRXCrossChain(USDT).transfer(router, 1000000 * 1e6),
+                "USDT Transfer failed"
+            );
 
             // IDRX
             MockIDRXCrossChain(IDRX).giveMe(10000000000 * 1e6);
-            MockIDRXCrossChain(IDRX).transfer(router, 10000000000 * 1e6);
+            require(
+                MockIDRXCrossChain(IDRX).transfer(router, 10000000000 * 1e6),
+                "IDRX Transfer failed"
+            );
         }
 
         console.log("Liquidity Added to ALL Routers!");

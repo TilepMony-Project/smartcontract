@@ -39,4 +39,9 @@ interface IYieldAdapter {
      * @notice Returns metadata about the protocol.
      */
     function getProtocolInfo() external view returns (ProtocolInfo memory);
+
+    /**
+     * @notice Returns the current Supply APY for the given token in 1e18 scale.
+     */
+    function getSupplyApy(address token) external view returns (uint256);
 }

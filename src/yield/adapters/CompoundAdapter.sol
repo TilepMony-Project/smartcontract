@@ -72,9 +72,16 @@ contract CompoundAdapter is IYieldAdapter {
             });
     }
 
-    function getSupplyApy() external pure returns (uint256) {
-        // Static APY for prototype (e.g., 3%).
-        // In a real implementation, call Comet's `getSupplyRate` and convert.
-        return 3e16; // 3%
+    function getSupplyApy(
+        address /* token */
+    ) external view override returns (uint256) {
+        uint256 utilization = IComet(COMET).getUtilization();
+        uint64 supplyRate = IComet(COMET).getSupplyRate(utilization);
+        uint256 secondsPerYear = 31536000;
+
+        // APY = Rate per second * Seconds per year
+        // MockComet returns rate in 1e18 scale (e.g., 1e9 ~= 3% per year).
+        // Result is in 1e18 scale (e.g., 0.03 * 1e18).
+        return uint256(supplyRate) * secondsPerYear;
     }
 }

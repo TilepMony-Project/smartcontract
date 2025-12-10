@@ -28,7 +28,9 @@ contract MockInitCore is IInitCore {
 
         // 3. Calculate expected shares based on total assets and rate
         // shares = totalAssets * 1e18 / rate
-        uint256 requiredShares = (totalAssets * 1e18) / exchangeRate;
+        // SCALING FIX: Underlying is 6 decimals, Shares are 14 (6+8).
+        // We need to scale up by 1e8.
+        uint256 requiredShares = ((totalAssets * 1e18) / exchangeRate) * 1e8;
 
         if (requiredShares <= totalShares) return 0; // No new deposit
 
@@ -54,7 +56,9 @@ contract MockInitCore is IInitCore {
 
         // 3. Return underlying assets
         // assets = shares * rate / 1e18
-        uint256 amountToReturn = (sharesToBurn * exchangeRate) / 1e18;
+        // SCALING FIX: Shares are 14 decimals, Underlying is 6.
+        // We need to scale down by 1e8.
+        uint256 amountToReturn = ((sharesToBurn * exchangeRate) / 1e18) / 1e8;
 
         IERC20(underlying).safeTransferFrom(pool, receiver, amountToReturn);
 

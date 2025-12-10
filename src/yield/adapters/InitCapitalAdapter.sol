@@ -101,7 +101,9 @@ contract InitCapitalAdapter is IYieldAdapter {
             });
     }
 
-    function getSupplyApy(address token) external view returns (uint256) {
+    function getSupplyApy(
+        address token
+    ) external view override returns (uint256) {
         address pool = tokenToPool[token];
         if (pool == address(0)) return 0;
 
@@ -111,7 +113,9 @@ contract InitCapitalAdapter is IYieldAdapter {
         // APY = (Rate * SecondsPerYear * 100) / 1e18?
         // If rate is already e18 scaled?
         // Let's assume standard calculation
-        uint256 secondsPerYear = 365 * 24 * 60 * 60;
-        return (supplyRate * secondsPerYear * 100) / 1e18;
+        uint256 secondsPerYear = 31536000;
+        // Return APY in 1e18 scale (WAD).
+        // e.g. 5% = 0.05e18 = 5e16.
+        return supplyRate * secondsPerYear;
     }
 }

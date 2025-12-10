@@ -24,26 +24,27 @@
 
 ## Yield System
 
-### Helper Contracts
-- **YieldRouter**: `0x3c85f1c910c895ab6863398ef79af440a91678e7`
+### Core Contracts
+- **YieldRouter**: `0x5717ff1bdaa6c621e6448a9c86a4ececa6c236de`
 
 ### MethLab
-- **MethLabAdapter**: `0x62de03ea9ab956daef35eef3654d7b3c54bc7b74`
-- **MethLab Vault (IDRX)**: `0x1175edf09d9f9e02d0bde77747362a31875ec00f`
-- **MethLab Vault (USDC)**: `0x53f8e7f8d44a7e1e5ab9ae0d47cab80c435ae7cd`
-- **MethLab Vault (USDT)**: `0xd2e6881873ede0301c194938d7302918eb97102a`
+- **Adapter**: `0xf282bc26601a69e03c78318de97e617e686cbf79`
+- **Vault (IDRX)**: `0x7069d4ab5b7795e0d3c66fddd1ac3c3533690512`
+- **Vault (USDC)**: `0xc9066bb1584d35828464b8481256db977e32a4a0`
+- **Vault (USDT)**: `0x11e5bc89a961de706e26782692c08a0c6581392e`
 
 ### Init Capital
-- **InitCapitalAdapter**: `0xb29e7e19eda483dc20ad0dfb251295aaeca1d814`
-- **MockInitCore**: `0xa68685ad592de64b4a60062babb01a9bdab8d691`
-- **MockLendingPool (IDRX)**: `0x6a3dac9774ae55f606827f72467309e3e436304b`
-- **MockLendingPool (USDC)**: `0x936acc4e251733b9e48d8262576ac4c5886ab6f1`
-- **MockLendingPool (USDT)**: `0x96dab13f77fe5e7f7da6efb12a12be1c428454e3`
+- **Adapter**: `0xd3b4ab657e6f48b11b6b77ffc6e3679cfb9b96bc`
+- **Pool (IDRX)**: `0xb09df774c6dbc921076e73133c9759d3d12bb2f7`
+- **Pool (USDC)**: `0x9a8fff643cb8de4f4c39cdad55dbad099db05e61`
+- **Pool (USDT)**: `0x03604c39dfb4ea6874d935c6c8d2ac6b8aaf270e`
 
 ### Compound Finance
-- **MockComet (IDRX)**: `0xec0759577302f89f26adc4224153cfbd2c579fb0`
-- **CompoundAdapter (IDRX)**: `0x06632510dc19ecbdb28f0f6333c82ac582b3a8de`
-- **MockComet (USDC)**: `0x77ec0cd2bbd6256b719c3eb9cfb5a0a9f499b65e`
-- **CompoundAdapter (USDC)**: `0xfc2f66ff3444dc056968a3d51e6d7ac4e67a40bb`
-- **MockComet (USDT)**: `0x18165d25c62d04b2cf1f34ff838cca589e6d9967`
-- **CompoundAdapter (USDT)**: `0x540ec22ebf1184047600a68482b10f2f65721b36`
+- **Adapter (IDRX)**: `0x727a35abdb114bfd977f3977a26b16cf12217eca`
+- **Adapter (USDC)**: `0x2e3c4dfe44cf7ab0ce5e78b8e302b37788544993`
+- **Adapter (USDT)**: `0x56614f03021691a511bf95b352289c6fc04b15a2`
+- **Comet (IDRX)**: `0x6bda7409b3dbff5e763efb093949d9d9e8a47309`
+- **Comet (USDC)**: `0xf12aa9e125f03d7838280835e8ace0e9d6dd7183`
+- **Comet (USDT)**: `0x3e0f36a561df985ee5eb63cc4dd4ebf3fa033291`
+
+

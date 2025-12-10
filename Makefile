@@ -59,6 +59,13 @@ deploy-swap:
 		--verify \
 		--etherscan-api-key $(ETHERSCAN_API_KEY)
 
+inject-liquidity:
+	@echo "$(CYAN)💉 [INJECT] Injecting initial liquidity...$(RESET)"
+	@forge script script/YieldLiquidityInjector.s.sol:YieldLiquidityInjector \
+		--rpc-url $(RPC_URL) \
+		--broadcast -vvvv \
+		--legacy
+
 
 add-liquidity-router:
 	@echo "$(CYAN)💧 [LIQUIDITY] Adding liquidity to routers...$(RESET)"

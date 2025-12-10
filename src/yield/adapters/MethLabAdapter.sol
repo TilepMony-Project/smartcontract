@@ -89,7 +89,9 @@ contract MethLabAdapter is IYieldAdapter {
             });
     }
 
-    function getSupplyApy(address token) external view returns (uint256) {
+    function getSupplyApy(
+        address token
+    ) external view override returns (uint256) {
         address vault = tokenToVault[token];
         if (vault == address(0)) return 0;
 

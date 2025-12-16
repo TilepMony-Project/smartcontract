@@ -1,5 +1,8 @@
 # Contract Addresses
 
+## Core Contracts
+- **MainController**: `0xD49565df5B91eD2FA8CB3f448313Cd736Ad23c32`
+
 ## Token CrossChain
 
 1. **mIDRX**: 0xc39DfE81DcAd49F1Da4Ff8d41f723922Febb75dc
@@ -24,8 +27,6 @@
 
 ## Yield System
 
-### Core Contracts
-### Core Contracts
 - **YieldRouter**: `0xfd5d839ef67bb50a3395f2974419274b47d7cb90`
 
 ### MethLab

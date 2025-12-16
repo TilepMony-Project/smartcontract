@@ -60,7 +60,7 @@ contract MockInitCore is IInitCore {
         // We need to scale down by 1e8.
         uint256 amountToReturn = ((sharesToBurn * exchangeRate) / 1e18) / 1e8;
 
-        IERC20(underlying).safeTransferFrom(pool, receiver, amountToReturn);
+        MockLendingPool(pool).transferUnderlyingTo(receiver, amountToReturn);
 
         return amountToReturn;
     }

@@ -49,14 +49,23 @@ contract MockShareYieldAdapter is IYieldAdapter {
         return amount;
     }
 
-    function getProtocolInfo() external pure returns (ProtocolInfo memory) {
+    function getProtocolInfo()
+        external
+        pure
+        override
+        returns (ProtocolInfo memory)
+    {
         return
-            ProtocolInfo({
-                name: "Mock Share Adapter",
-                description: "Test",
-                website: "https://test.com",
-                icon: "icon.png"
-            });
+            ProtocolInfo(
+                "Mock Yield",
+                "Mock Protocol",
+                "https://mock.yield",
+                "mock_icon"
+            );
+    }
+
+    function getSupplyApy(address) external pure override returns (uint256) {
+        return 0;
     }
 }
 

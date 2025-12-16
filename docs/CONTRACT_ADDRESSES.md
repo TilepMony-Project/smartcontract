@@ -25,26 +25,25 @@
 ## Yield System
 
 ### Core Contracts
-- **YieldRouter**: `0x5717ff1bdaa6c621e6448a9c86a4ececa6c236de`
+### Core Contracts
+- **YieldRouter**: `0xfd5d839ef67bb50a3395f2974419274b47d7cb90`
 
 ### MethLab
-- **Adapter**: `0xf282bc26601a69e03c78318de97e617e686cbf79`
-- **Vault (IDRX)**: `0x7069d4ab5b7795e0d3c66fddd1ac3c3533690512`
-- **Vault (USDC)**: `0xc9066bb1584d35828464b8481256db977e32a4a0`
-- **Vault (USDT)**: `0x11e5bc89a961de706e26782692c08a0c6581392e`
+- **Adapter**: `0x183c5d648a3b36144ac7697aabc3ce27e1086e36`
+- **Vault (IDRX)**: `0xbe97818d0b6577410b7282f9306ea9ed8967d56a`
+- **Vault (USDC)**: `0xde28623e3a209062479c4cd3240ed14819309d66`
+- **Vault (USDT)**: `0x30f42e2f1931324abc0ee9975ff63c552ab50ab7`
 
 ### Init Capital
-- **Adapter**: `0xd3b4ab657e6f48b11b6b77ffc6e3679cfb9b96bc`
-- **Pool (IDRX)**: `0xb09df774c6dbc921076e73133c9759d3d12bb2f7`
-- **Pool (USDC)**: `0x9a8fff643cb8de4f4c39cdad55dbad099db05e61`
-- **Pool (USDT)**: `0x03604c39dfb4ea6874d935c6c8d2ac6b8aaf270e`
+- **Adapter**: `0x9738885a3946456f471c17f43dd421ebe7ceb0ef`
+- **Pool (IDRX)**: `0x6adaa6312b785fcbf4904ba505ecff4f3fe2b4e2`
+- **Pool (USDC)**: `0x2e01d3672be5978a0cceada25097325f255f76e8`
+- **Pool (USDT)**: `0x99a13d0d22025ebee7958be133022aa17e63a821`
 
 ### Compound Finance
-- **Adapter (IDRX)**: `0x727a35abdb114bfd977f3977a26b16cf12217eca`
-- **Adapter (USDC)**: `0x2e3c4dfe44cf7ab0ce5e78b8e302b37788544993`
-- **Adapter (USDT)**: `0x56614f03021691a511bf95b352289c6fc04b15a2`
-- **Comet (IDRX)**: `0x6bda7409b3dbff5e763efb093949d9d9e8a47309`
-- **Comet (USDC)**: `0xf12aa9e125f03d7838280835e8ace0e9d6dd7183`
-- **Comet (USDT)**: `0x3e0f36a561df985ee5eb63cc4dd4ebf3fa033291`
-
-
+- Compound Adapter (IDRX): `0xf040bb54c3b3a842543f2586f83ffe0bb0b3c0ad`
+- Compound Adapter (USDC): `0xceb77041351731c0613dce7f67e0c4086e283d5d`
+- Compound Adapter (USDT): `0x18706225374771d0d6286ed17b79a74445dedca5`
+- Comet (IDRX): `0xadc863d35179fb78d05cd7bc270117d47cb7c366`
+- Comet (USDC): `0x36ecf1a5e8fb62ab7289b8eaeb1083f1211679fd`
+- Comet (USDT): `0xb01a0dbb3334da1087f87e70fb5149da1093e6a2`

@@ -40,7 +40,7 @@ contract CompoundAdapter is IYieldAdapter {
         }
 
         // Return amount of underlying deposited and the share token address (comet)
-        return (amount, COMET);
+        return (sharesBalance, COMET);
     }
 
     function withdraw(
@@ -48,13 +48,21 @@ contract CompoundAdapter is IYieldAdapter {
         uint256 amount,
         bytes calldata /* data */
     ) external override returns (uint256) {
+        // 'amount' is Shares to burn (since YieldRouter transferred 'amount' shares to us)
+        uint256 rate = IComet(COMET).exchangeRate();
+
+        // Calculate Assets to withdraw: Assets = Shares * Rate / 1e18
+        // e.g. 171 shares * 1.1 = 188.1 assets
+        uint256 assetsToWithdraw = (amount * rate) / 1e18;
+
         // 1. Withdraw from Compound V3 to this adapter
-        IComet(COMET).withdraw(token, amount);
+        // Compound V3 (Mock) expects ASSET amount to withdraw
+        IComet(COMET).withdraw(token, assetsToWithdraw);
 
         // 2. Transfer tokens to Router (msg.sender)
-        IERC20(token).safeTransfer(msg.sender, amount);
+        IERC20(token).safeTransfer(msg.sender, assetsToWithdraw);
 
-        return amount;
+        return assetsToWithdraw;
     }
 
     function getProtocolInfo()

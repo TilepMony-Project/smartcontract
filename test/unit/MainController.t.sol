@@ -56,14 +56,23 @@ contract TestYieldAdapter is IYieldAdapter {
         return amount;
     }
 
-    function getProtocolInfo() external pure returns (ProtocolInfo memory) {
+    function getProtocolInfo()
+        external
+        pure
+        override
+        returns (ProtocolInfo memory)
+    {
         return
-            ProtocolInfo({
-                name: "Test",
-                description: "Test Desc",
-                website: "https://test.com",
-                icon: "icon.png"
-            });
+            ProtocolInfo(
+                "Test Protocol",
+                "Test Description",
+                "https://test.com",
+                "icon_url"
+            );
+    }
+
+    function getSupplyApy(address) external pure override returns (uint256) {
+        return 0;
     }
 }
 

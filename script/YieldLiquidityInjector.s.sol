@@ -22,11 +22,30 @@ contract YieldLiquidityInjector is Script {
         uint256 amount;
     }
 
+    function run(
+        address vault,
+        address token,
+        uint256 newRate,
+        uint256 amountToInject
+    ) external {
+        // Targeted run for testing
+        // 1. Inject Liquidity
+        _mintTo(token, vault, amountToInject);
+
+        // 2. Set Rate
+        try IYieldMock(vault).setExchangeRate(newRate) {
+            console.log("Success: Exchange rate set to", newRate);
+        } catch {
+            console.log("Error: Set Exchange Rate failed.");
+        }
+    }
+
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        address deployer = vm.addr(deployerPrivateKey); // Get deployer address
         vm.startBroadcast(deployerPrivateKey);
 
-        // Tokens
+        // Tokens (Mantle Sepolia)
         address IDRX = 0xc39DfE81DcAd49F1Da4Ff8d41f723922Febb75dc;
         address USDC = 0x681db03Ef13e37151e9fd68920d2c34273194379;
         address USDT = 0x9a82fC0c460A499b6ce3d6d8A29835a438B5Ec28;
@@ -43,19 +62,19 @@ contract YieldLiquidityInjector is Script {
         // MethLab
         configs[0] = Config(
             "MethLab IDRX",
-            0x7069d4AB5B7795E0D3c66FDDD1aC3c3533690512,
+            0xBe97818D0B6577410b7282F9306Ea9ed8967d56a,
             IDRX,
             amountIDRX
         );
         configs[1] = Config(
             "MethLab USDC",
-            0xc9066bb1584d35828464B8481256dB977e32A4a0,
+            0xDE28623E3A209062479C4CD3240eD14819309D66,
             USDC,
             amountUSD
         );
         configs[2] = Config(
             "MethLab USDT",
-            0x11e5Bc89A961De706E26782692c08a0c6581392E,
+            0x30f42E2f1931324aBC0ee9975FF63C552ab50ab7,
             USDT,
             amountUSD
         );
@@ -63,19 +82,19 @@ contract YieldLiquidityInjector is Script {
         // Init Capital (MockLendingPool)
         configs[3] = Config(
             "InitCapital IDRX",
-            0xb09df774c6dbc921076e73133c9759D3d12bB2F7,
+            0x6Adaa6312b785fcbf4904BA505Ecff4f3fe2b4e2,
             IDRX,
             amountIDRX
         );
         configs[4] = Config(
             "InitCapital USDC",
-            0x9a8FfF643CB8de4F4C39cdAD55dbad099dB05E61,
+            0x2e01d3672be5978a0CcEada25097325f255F76e8,
             USDC,
             amountUSD
         );
         configs[5] = Config(
             "InitCapital USDT",
-            0x03604c39dfB4Ea6874D935C6C8D2ac6B8aaF270E,
+            0x99a13d0D22025EbeE7958BE133022Aa17E63a821,
             USDT,
             amountUSD
         );
@@ -83,19 +102,19 @@ contract YieldLiquidityInjector is Script {
         // Compound (MockComet)
         configs[6] = Config(
             "Compound IDRX",
-            0x6Bda7409B3dbfF5E763Efb093949D9D9e8A47309,
+            0xAaeBE3d3A7DFcC4c2C334E007dc4339d7669a411,
             IDRX,
             amountIDRX
         );
         configs[7] = Config(
             "Compound USDC",
-            0xF12aA9E125F03D7838280835E8aCe0E9D6dd7183,
+            0x375b705311059aadaC34fe4BEa3C569adc4dcA8D,
             USDC,
             amountUSD
         );
         configs[8] = Config(
             "Compound USDT",
-            0x3e0f36a561df985Ee5eb63CC4Dd4eBF3fA033291,
+            0xC88C22A769FB69fD6Ed690E927f3F1CCCaDF9180,
             USDT,
             amountUSD
         );
@@ -107,29 +126,93 @@ contract YieldLiquidityInjector is Script {
             console.log("Token:", c.token);
             console.log("Amount:", c.amount);
 
-            // 1. Inject Liquidity
-            console.log("Attempting giveMe and transfer...");
-            try MockIDRX(c.token).giveMe(c.amount) {
-                IERC20(c.token).transfer(c.vault, c.amount);
-                console.log("Success: Used giveMe and transferred.");
-            } catch {
-                console.log(
-                    "Warning: giveMe failed. Attempting direct mint..."
-                );
-                try MockERC20(c.token).mint(c.vault, c.amount) {
-                    console.log("Success: Minted liquidity.");
-                } catch {
-                    console.log("Error: Injection failed.");
-                }
-            }
+            // 1. Inject Liquidity to Vault - Robust Method
+            console.log("Attempting to inject liquidity to vault...");
+            _mintTo(c.token, c.vault, c.amount);
+
             // 2. Set Exchange Rate
+            console.log("Setting exchange rate...");
             try IYieldMock(c.vault).setExchangeRate(newRate) {
                 console.log("Success: Exchange rate set to 1.1");
             } catch {
                 console.log("Error: Set Exchange Rate failed.");
             }
+            // 3. Fund Deployer & Mint Shares (Simulate User)
+            console.log("Funding deployer and minting shares...");
+            // Mint underlying to deployer first
+            _mintTo(c.token, deployer, c.amount); // Fund deployer with same amount as liquidity
+
+            // Approve Vault to spend deployer's tokens
+            try IERC20(c.token).approve(c.vault, type(uint256).max) {
+                // Mint Shares
+                // Need to handle different minting interfaces if they vary, but assuming standard yield mock mint/deposit
+                // MethLab/Init/Comet mocks usually have mint(to, amount) or similar.
+                // Let's try to call mint(deployer, amount) on the vault.
+                // Initial amount for shares.
+                uint256 shareAmount = (c.amount * 1e18) / newRate; // Approx calculation
+                // Use a smaller fixed amount for testing to avoid hitting limits
+                uint256 testShareAmount = 1000 * 1e6;
+                if (i >= 3 && i <= 5) {
+                    // Init Capital often uses 18 decimals or underlying? Mocks usually underlying.
+                    // Check init decimals.
+                }
+
+                // Try minting shares
+                (bool success, ) = c.vault.call(
+                    abi.encodeWithSignature(
+                        "mint(address,uint256)",
+                        deployer,
+                        testShareAmount
+                    )
+                );
+                if (success) {
+                    console.log("Success: Minted shares to deployer.");
+                } else {
+                    console.log(
+                        "Warning: Failed to mint shares to deployer contract might not support mint(address,uint256)"
+                    );
+                }
+            } catch {
+                console.log("Error: Approval failed.");
+            }
         }
 
         vm.stopBroadcast();
+    }
+
+    // Helper to robustly mint tokens
+    function _mintTo(address token, address to, uint256 amount) internal {
+        // Method 1: giveMe + transfer (Preferred for Mocks in this system)
+        (bool success, ) = token.call(
+            abi.encodeWithSignature("giveMe(uint256)", amount)
+        );
+        if (success) {
+            // giveMe usually gives to msg.sender (this script contract or deployer?)
+            // if broadcast is active, msg.sender is deployer EOA.
+            // If giveMe gives to msg.sender, we just need to transfer if 'to' is different.
+            if (to != msg.sender) {
+                bool transferSuccess = IERC20(token).transfer(to, amount);
+                if (transferSuccess) {
+                    console.log("Minted (via giveMe + transfer) to:", to);
+                    return;
+                } else {
+                    console.log("Transfer failed after giveMe.");
+                }
+            } else {
+                console.log("Minted (via giveMe) to self:", to);
+                return;
+            }
+        }
+
+        // Method 2: mint(to, amount) (Standard MockERC20)
+        (bool mintSuccess, ) = token.call(
+            abi.encodeWithSignature("mint(address,uint256)", to, amount)
+        );
+        if (mintSuccess) {
+            console.log("Minted (via mint) directly to:", to);
+            return;
+        }
+
+        console.log("FAILED to mint tokens to:", to);
     }
 }

@@ -55,7 +55,7 @@ contract CompoundAdapterTest is Test {
         // MockComet default supply rate is 1000000000 (1e9) per second
         // APY = (1e9 * 31536000 * 100) / 1e18 = 3.15%
 
-        uint256 apy = adapter.getSupplyApy();
+        uint256 apy = adapter.getSupplyApy(address(token));
         console.log("Compound APY:", apy);
         assertGt(apy, 0);
     }
@@ -93,5 +93,59 @@ contract CompoundAdapterTest is Test {
         assertEq(amountReceived, amount);
         // Comet balance should decrease by amount
         assertEq(token.balanceOf(address(comet)), 10000 * 1e6); // Back to initial liquidity
+    }
+    function testWithdrawWithExchangeRate() public {
+        console.log("--- Testing Compound Withdraw with Rate 1.1 ---");
+        // Set Exchange Rate to 1.1 (1.1e18)
+        comet.setExchangeRate(1.1e18);
+
+        uint256 amount = 100 * 1e6;
+
+        vm.startPrank(user);
+
+        // 1. Approve Router to spend tokens
+        token.approve(address(router), amount);
+
+        // 2. Deposit
+        // With Rate 1.1, 100 Assets -> 90.909090 Shares
+        (uint256 sharesReceived, address shareToken) = router.deposit(
+            address(adapter),
+            address(token),
+            amount,
+            ""
+        );
+        console.log("Assets Deposited:", amount);
+        console.log("Shares Received:", sharesReceived);
+
+        // Verify Shares < Assets
+        assertLt(
+            sharesReceived,
+            amount,
+            "Shares should be less than assets due to rate > 1.0"
+        );
+
+        // 3. User approves Router to spend Shares
+        MockComet(shareToken).approve(address(router), sharesReceived);
+
+        // 4. Withdraw all shares
+        uint256 assetsReceived = router.withdraw(
+            address(adapter),
+            shareToken,
+            address(token),
+            sharesReceived, // Withdraw all shares we got
+            ""
+        );
+        console.log("Assets Received:", assetsReceived);
+
+        // 5. Verify Assets Received match Initial Deposit (approx due to rounding)
+        // 90.909090 Shares * 1.1 Rate = 99.999999 Assets ~ 100 Assets
+        assertApproxEqAbs(
+            assetsReceived,
+            amount,
+            100,
+            "Should receive approx original amount"
+        );
+
+        vm.stopPrank();
     }
 }

@@ -7,6 +7,7 @@ import {MockERC20} from "../MockERC20.sol";
 import {
     IERC20Metadata
 } from "openzeppelin-contracts/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
 contract MockLendingPool is ILendingPool, MockERC20 {
     address public override underlyingToken;
@@ -31,5 +32,9 @@ contract MockLendingPool is ILendingPool, MockERC20 {
 
     function getSupplyRateE18() external view override returns (uint256) {
         return supplyRate;
+    }
+
+    function transferUnderlyingTo(address to, uint256 amount) external {
+        IERC20(underlyingToken).transfer(to, amount);
     }
 }

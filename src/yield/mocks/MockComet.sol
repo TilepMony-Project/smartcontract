@@ -52,14 +52,17 @@ contract MockComet is MockERC20, IComet {
     }
 
     function withdraw(address asset, uint256 amount) external override {
-        // Burn Comet tokens (shares)
-        _burn(msg.sender, amount);
+        // Logic matches Compound V3: 'amount' is Underlying Assets to withdraw
 
-        // Calculate Assets: assets = shares * rate
-        uint256 assets = (amount * exchangeRate) / 1e18;
+        // Calculate Shares required to burn: shares = (assets * 1e18) / exchangeRate
+        // Reversed from supply: shares = (assets * 1e18) / exchangeRate
+        uint256 sharesToBurn = (amount * 1e18) / exchangeRate;
+
+        // Burn Comet tokens (shares)
+        _burn(msg.sender, sharesToBurn);
 
         // Transfer assets back to user
-        IERC20(asset).safeTransfer(msg.sender, assets);
+        IERC20(asset).safeTransfer(msg.sender, amount);
     }
 
     function getSupplyRate(uint256) external view override returns (uint64) {

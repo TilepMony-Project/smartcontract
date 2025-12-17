@@ -7,9 +7,7 @@ import {IMainController} from "../src/interfaces/IMainController.sol";
 import {SwapAggregator} from "../src/swap/SwapAggregator.sol";
 import {MockERC20} from "../src/yield/mocks/MockERC20.sol";
 import {ISwapAdapter} from "../src/swap/interfaces/ISwapAdapter.sol";
-import {
-    SafeERC20
-} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
+import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
 // Simple Swap Adapter for testing
@@ -20,10 +18,14 @@ contract TestSwapAdapter is ISwapAdapter {
         address tokenIn,
         address tokenOut,
         uint256 amountIn,
-        uint256 /* minAmountOut */,
+        uint256,
+        /* minAmountOut */
         address from,
         address to
-    ) external returns (uint256 amountOut) {
+    )
+        external
+        returns (uint256 amountOut)
+    {
         // Mock swap: 1:1 ratio
         IERC20(tokenIn).safeTransferFrom(from, address(this), amountIn);
         MockERC20(tokenOut).mint(to, amountIn); // Mint output to 'to'
@@ -68,9 +70,7 @@ contract IntegrationFlows is Test {
         vm.startPrank(user);
 
         // 1. Define Actions
-        IMainController.Action[] memory actions = new IMainController.Action[](
-            3
-        );
+        IMainController.Action[] memory actions = new IMainController.Action[](3);
 
         // Action 0: MINT IDRX (Fake external source)
         bytes memory mintData = abi.encode(address(idrx), 1000 * 1e18);
@@ -110,16 +110,8 @@ contract IntegrationFlows is Test {
         controller.executeWorkflow(actions, address(0), 0);
 
         // 3. Verify
-        assertEq(
-            usdt.balanceOf(recipient),
-            1000 * 1e18,
-            "Recipient should receive swapped USDT"
-        );
-        assertEq(
-            idrx.balanceOf(address(controller)),
-            0,
-            "Controller should have no IDRX left"
-        );
+        assertEq(usdt.balanceOf(recipient), 1000 * 1e18, "Recipient should receive swapped USDT");
+        assertEq(idrx.balanceOf(address(controller)), 0, "Controller should have no IDRX left");
 
         vm.stopPrank();
     }
@@ -134,19 +126,10 @@ contract IntegrationFlows is Test {
         idrx.approve(address(controller), 500 * 1e18);
 
         // 1. Define Actions
-        IMainController.Action[] memory actions = new IMainController.Action[](
-            2
-        );
+        IMainController.Action[] memory actions = new IMainController.Action[](2);
 
         // Action 0: SWAP IDRX -> USDT
-        bytes memory swapData = abi.encode(
-            address(testSwapAdapter),
-            address(idrx),
-            address(usdt),
-            0,
-            0,
-            address(0)
-        );
+        bytes memory swapData = abi.encode(address(testSwapAdapter), address(idrx), address(usdt), 0, 0, address(0));
         actions[0] = IMainController.Action({
             actionType: IMainController.ActionType.SWAP,
             targetContract: address(swapAggregator),
@@ -167,11 +150,7 @@ contract IntegrationFlows is Test {
         controller.executeWorkflow(actions, address(idrx), 500 * 1e18);
 
         // 3. Verify
-        assertEq(
-            usdt.balanceOf(recipient),
-            500 * 1e18,
-            "Recipient should receive swapped USDT"
-        );
+        assertEq(usdt.balanceOf(recipient), 500 * 1e18, "Recipient should receive swapped USDT");
         assertEq(idrx.balanceOf(user), 0, "User should have spent IDRX");
 
         vm.stopPrank();

@@ -2,12 +2,8 @@
 pragma solidity ^0.8.19;
 
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
-import {
-    IERC20Metadata
-} from "openzeppelin-contracts/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import {
-    SafeERC20
-} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IERC20Metadata} from "openzeppelin-contracts/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IMethLab} from "../interfaces/IMethLab.sol";
 import {MockERC20} from "./MockERC20.sol";
 
@@ -22,27 +18,19 @@ contract MockMethLab is IMethLab, MockERC20 {
 
     error FundsLocked(uint256 unlockTime);
 
-    constructor(
-        address _asset,
-        string memory name,
-        string memory symbol
-    ) MockERC20(name, symbol, IERC20Metadata(_asset).decimals()) {
+    constructor(address _asset, string memory name, string memory symbol)
+        MockERC20(name, symbol, IERC20Metadata(_asset).decimals())
+    {
         ASSET = IERC20(_asset);
     }
 
-    function deposit(
-        uint256 amount,
-        address receiver
-    ) external override returns (uint256 shares) {
+    function deposit(uint256 amount, address receiver) external override returns (uint256 shares) {
         shares = (amount * 1e18) / exchangeRate;
         ASSET.safeTransferFrom(msg.sender, address(this), amount);
         _mint(receiver, shares);
     }
 
-    function withdraw(
-        uint256 shares,
-        address receiver
-    ) external override returns (uint256 assets) {
+    function withdraw(uint256 shares, address receiver) external override returns (uint256 assets) {
         if (block.timestamp < lockUntil) revert FundsLocked(lockUntil);
 
         assets = (shares * exchangeRate) / 1e18;
@@ -50,15 +38,11 @@ contract MockMethLab is IMethLab, MockERC20 {
         ASSET.safeTransfer(receiver, assets);
     }
 
-    function convertToAssets(
-        uint256 shares
-    ) external view override returns (uint256) {
+    function convertToAssets(uint256 shares) external view override returns (uint256) {
         return (shares * exchangeRate) / 1e18;
     }
 
-    function convertToShares(
-        uint256 assets
-    ) external view override returns (uint256) {
+    function convertToShares(uint256 assets) external view override returns (uint256) {
         return (assets * 1e18) / exchangeRate;
     }
 

@@ -3,9 +3,7 @@ pragma solidity ^0.8.19;
 
 import {IInitCore} from "../../interfaces/initCore/IInitCore.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
-import {
-    SafeERC20
-} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
+import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import {ILendingPool} from "../../interfaces/initCore/ILendingPool.sol";
 import {MockLendingPool} from "./MockLendingPool.sol";
@@ -13,10 +11,7 @@ import {MockLendingPool} from "./MockLendingPool.sol";
 contract MockInitCore is IInitCore {
     using SafeERC20 for IERC20;
 
-    function mintTo(
-        address pool,
-        address receiver
-    ) external override returns (uint256) {
+    function mintTo(address pool, address receiver) external override returns (uint256) {
         // Dynamic Logic with Exchange Rate
         // 1. Get total underlying assets in pool
         address underlying = ILendingPool(pool).underlyingToken();
@@ -41,10 +36,7 @@ contract MockInitCore is IInitCore {
         return amountToMint;
     }
 
-    function burnTo(
-        address pool,
-        address receiver
-    ) external override returns (uint256) {
+    function burnTo(address pool, address receiver) external override returns (uint256) {
         address underlying = ILendingPool(pool).underlyingToken();
 
         // 1. Get shares held by the Pool (User/Router transfers shares to Pool before burning)

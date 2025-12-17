@@ -13,17 +13,14 @@ interface IMockToken is IERC20 {
 
 contract ForkSimulation is Test {
     // Real Addresses from contractConfig.ts
-    address constant MAIN_CONTROLLER =
-        0x2933CbFE50b8e0060feeDd192a4C0F356063EB98;
-    address constant SWAP_AGGREGATOR =
-        0xed47849Eb9548F164234287964356eF9A6f73075;
+    address constant MAIN_CONTROLLER = 0x2933CbFE50b8e0060feeDd192a4C0F356063EB98;
+    address constant SWAP_AGGREGATOR = 0xed47849Eb9548F164234287964356eF9A6f73075;
     address constant IDRX = 0xc39DfE81DcAd49F1Da4Ff8d41f723922Febb75dc;
     address constant USDT = 0x9a82fC0c460A499b6ce3d6d8A29835a438B5Ec28;
     address constant USDC = 0x681db03Ef13e37151e9fd68920d2c34273194379;
 
     // Adapters
-    address constant FUSIONX_ADAPTER =
-        0x864d3a6F4804ABd32D7b42414E33Ed1CAeC5F505;
+    address constant FUSIONX_ADAPTER = 0x864d3a6F4804ABd32D7b42414E33Ed1CAeC5F505;
 
     // User / Recipient
     address user = address(0x1234);
@@ -42,9 +39,7 @@ contract ForkSimulation is Test {
         vm.startPrank(user);
 
         // 1. Setup Actions
-        IMainController.Action[] memory actions = new IMainController.Action[](
-            3
-        );
+        IMainController.Action[] memory actions = new IMainController.Action[](3);
 
         // Action 0: MINT IDRX
         // IMPORTANT: Verify Decimals. IDRX should be 6.
@@ -58,10 +53,7 @@ contract ForkSimulation is Test {
         bytes memory mintData = abi.encode(IDRX, mintAmount);
 
         actions[0] = IMainController.Action({
-            actionType: IMainController.ActionType.MINT,
-            targetContract: IDRX,
-            data: mintData,
-            inputAmountPercentage: 0
+            actionType: IMainController.ActionType.MINT, targetContract: IDRX, data: mintData, inputAmountPercentage: 0
         });
 
         // Action 1: SWAP IDRX -> USDC (User mentioned USDC in screenshot, or Swap to something)

@@ -3,9 +3,7 @@ pragma solidity ^0.8.19;
 
 import {IYieldAdapter} from "../interfaces/IYieldAdapter.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
-import {
-    SafeERC20
-} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
+import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IInitCore} from "../interfaces/initCore/IInitCore.sol";
 import {ILendingPool} from "../interfaces/initCore/ILendingPool.sol";
 
@@ -29,7 +27,11 @@ contract InitCapitalAdapter is IYieldAdapter {
         address token,
         uint256 amount,
         bytes calldata /* data */
-    ) external override returns (uint256, address) {
+    )
+        external
+        override
+        returns (uint256, address)
+    {
         address pool = tokenToPool[token];
         if (pool == address(0)) revert PoolNotFound(token);
 
@@ -62,7 +64,11 @@ contract InitCapitalAdapter is IYieldAdapter {
         address token,
         uint256 amount,
         bytes calldata /* data */
-    ) external override returns (uint256) {
+    )
+        external
+        override
+        returns (uint256)
+    {
         address pool = tokenToPool[token];
         require(pool != address(0), "Pool not found");
 
@@ -75,10 +81,7 @@ contract InitCapitalAdapter is IYieldAdapter {
 
         // 2. Call burnTo logic
         // returns amount of underlying redeemed
-        uint256 amountReceived = IInitCore(INIT_CORE).burnTo(
-            pool,
-            address(this)
-        );
+        uint256 amountReceived = IInitCore(INIT_CORE).burnTo(pool, address(this));
 
         // 3. Transfer underlying to Router (msg.sender)
         IERC20(token).safeTransfer(msg.sender, amountReceived);
@@ -86,24 +89,16 @@ contract InitCapitalAdapter is IYieldAdapter {
         return amountReceived;
     }
 
-    function getProtocolInfo()
-        external
-        pure
-        override
-        returns (ProtocolInfo memory)
-    {
-        return
-            ProtocolInfo({
-                name: "INIT Capital",
-                description: "Liquidity Hook Money Market",
-                website: "https://init.capital",
-                icon: "init_icon_url"
-            });
+    function getProtocolInfo() external pure override returns (ProtocolInfo memory) {
+        return ProtocolInfo({
+            name: "INIT Capital",
+            description: "Liquidity Hook Money Market",
+            website: "https://init.capital",
+            icon: "init_icon_url"
+        });
     }
 
-    function getSupplyApy(
-        address token
-    ) external view override returns (uint256) {
+    function getSupplyApy(address token) external view override returns (uint256) {
         address pool = tokenToPool[token];
         if (pool == address(0)) return 0;
 

@@ -2,9 +2,7 @@
 pragma solidity ^0.8.19;
 
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
-import {
-    SafeERC20
-} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
+import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Ownable} from "openzeppelin-contracts/contracts/access/Ownable.sol";
 import {IYieldAdapter} from "./interfaces/IYieldAdapter.sol";
 
@@ -14,18 +12,10 @@ contract YieldRouter is Ownable {
     error AdapterNotWhitelisted(address adapter);
 
     event Deposited(
-        address indexed user,
-        address indexed adapter,
-        address indexed token,
-        uint256 amount,
-        uint256 amountOut
+        address indexed user, address indexed adapter, address indexed token, uint256 amount, uint256 amountOut
     );
     event Withdrawn(
-        address indexed user,
-        address indexed adapter,
-        address indexed token,
-        uint256 amount,
-        uint256 amountReceived
+        address indexed user, address indexed adapter, address indexed token, uint256 amount, uint256 amountReceived
     );
     event AdapterWhitelisted(address indexed adapter, bool status);
 
@@ -44,10 +34,7 @@ contract YieldRouter is Ownable {
         }
     }
 
-    function setAdapterWhitelist(
-        address adapter,
-        bool status
-    ) external onlyOwner {
+    function setAdapterWhitelist(address adapter, bool status) external onlyOwner {
         isAdapterWhitelisted[adapter] = status;
         emit AdapterWhitelisted(adapter, status);
     }
@@ -56,12 +43,11 @@ contract YieldRouter is Ownable {
      * @notice Routes user deposit to the specific adapter.
      * @dev User must approve this contract to spend `token`.
      */
-    function deposit(
-        address adapter,
-        address token,
-        uint256 amount,
-        bytes calldata data
-    ) external onlyWhitelisted(adapter) returns (uint256, address) {
+    function deposit(address adapter, address token, uint256 amount, bytes calldata data)
+        external
+        onlyWhitelisted(adapter)
+        returns (uint256, address)
+    {
         // 1. Transfer tokens from user to this router
         IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
 
@@ -70,8 +56,7 @@ contract YieldRouter is Ownable {
         IERC20(token).forceApprove(adapter, amount);
 
         // 3. Call adapter deposit
-        (uint256 amountOut, address shareToken) = IYieldAdapter(adapter)
-            .deposit(token, amount, data);
+        (uint256 amountOut, address shareToken) = IYieldAdapter(adapter).deposit(token, amount, data);
 
         // 4. Transfer receipt tokens (shares) back to user
         // NOTE: We do NOT transfer back to user automatically anymore if the MainController
@@ -100,7 +85,11 @@ contract YieldRouter is Ownable {
         address token, // Underlying token
         uint256 amount, // Share amount
         bytes calldata data
-    ) external onlyWhitelisted(adapter) returns (uint256) {
+    )
+        external
+        onlyWhitelisted(adapter)
+        returns (uint256)
+    {
         // 1. Pull shares from User
         IERC20(shareToken).safeTransferFrom(msg.sender, address(this), amount);
 
@@ -110,11 +99,7 @@ contract YieldRouter is Ownable {
         // 3. Call adapter withdraw
         // Note: 'amount' passed to adapter is typically the share amount to burn
         // The adapter should handle burning the shares from 'this' (Router)
-        uint256 amountReceived = IYieldAdapter(adapter).withdraw(
-            token,
-            amount,
-            data
-        );
+        uint256 amountReceived = IYieldAdapter(adapter).withdraw(token, amount, data);
 
         // 4. Transfer underlying back to user
         IERC20(token).safeTransfer(msg.sender, amountReceived);

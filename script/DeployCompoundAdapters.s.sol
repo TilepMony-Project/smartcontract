@@ -33,36 +33,18 @@ contract DeployCompoundAdapters is Script {
         console.log("New CompoundAdapter USDT:", address(adapterUSDT));
 
         // Whitelist New Adapters
-        IYieldRouter(yieldRouter).setAdapterWhitelist(
-            address(adapterIDRX),
-            true
-        );
-        IYieldRouter(yieldRouter).setAdapterWhitelist(
-            address(adapterUSDC),
-            true
-        );
-        IYieldRouter(yieldRouter).setAdapterWhitelist(
-            address(adapterUSDT),
-            true
-        );
+        IYieldRouter(yieldRouter).setAdapterWhitelist(address(adapterIDRX), true);
+        IYieldRouter(yieldRouter).setAdapterWhitelist(address(adapterUSDC), true);
+        IYieldRouter(yieldRouter).setAdapterWhitelist(address(adapterUSDT), true);
 
         // Optional: Blacklist Old Adapters?
         // Old addresses:
         // IDRX: 0x3beb89f49f2d3f35a4f5e3374edc73fa9b03ad57
         // USDC: 0x69cb5590ac1c3a717afbeb0228bfc905333243a7
         // USDT: 0xd7cee5fada0baca0c5945acb19963028b08062c2
-        IYieldRouter(yieldRouter).setAdapterWhitelist(
-            0x3bEb89F49F2D3f35A4F5E3374EdC73FA9b03AD57,
-            false
-        );
-        IYieldRouter(yieldRouter).setAdapterWhitelist(
-            0x69CB5590Ac1C3A717aFbEB0228bfC905333243a7,
-            false
-        );
-        IYieldRouter(yieldRouter).setAdapterWhitelist(
-            0xd7cEE5faDa0BaCa0c5945acB19963028b08062c2,
-            false
-        );
+        IYieldRouter(yieldRouter).setAdapterWhitelist(0x3bEb89F49F2D3f35A4F5E3374EdC73FA9b03AD57, false);
+        IYieldRouter(yieldRouter).setAdapterWhitelist(0x69CB5590Ac1C3A717aFbEB0228bfC905333243a7, false);
+        IYieldRouter(yieldRouter).setAdapterWhitelist(0xd7cEE5faDa0BaCa0c5945acB19963028b08062c2, false);
 
         vm.stopBroadcast();
     }

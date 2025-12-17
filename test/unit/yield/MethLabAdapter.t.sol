@@ -38,26 +38,15 @@ contract MethLabAdapterTest is Test {
         uint256 amount = 1000 * 1e6;
 
         console.log("User Balance Before:", usdc.balanceOf(user));
-        console.log(
-            "Vault Balance Before:",
-            usdc.balanceOf(address(methLabVault))
-        );
+        console.log("Vault Balance Before:", usdc.balanceOf(address(methLabVault)));
 
         vm.prank(user);
-        (uint256 shares, ) = router.deposit(
-            address(adapter),
-            address(usdc),
-            amount,
-            ""
-        );
+        (uint256 shares,) = router.deposit(address(adapter), address(usdc), amount, "");
 
         console.log("Deposited Amount:", amount);
         console.log("Shares Received:", shares);
         console.log("User Balance After:", usdc.balanceOf(user));
-        console.log(
-            "Vault Balance After:",
-            usdc.balanceOf(address(methLabVault))
-        );
+        console.log("Vault Balance After:", usdc.balanceOf(address(methLabVault)));
 
         assertEq(usdc.balanceOf(address(methLabVault)), amount);
         // Initial exchange rate is 1:1, but scaled by 1e18 in mock
@@ -70,12 +59,7 @@ contract MethLabAdapterTest is Test {
         uint256 amount = 1000 * 1e6;
 
         vm.prank(user);
-        (uint256 shares, ) = router.deposit(
-            address(adapter),
-            address(usdc),
-            amount,
-            ""
-        );
+        (uint256 shares,) = router.deposit(address(adapter), address(usdc), amount, "");
 
         console.log("Initial Deposit Shares:", shares);
 
@@ -89,13 +73,8 @@ contract MethLabAdapterTest is Test {
 
         vm.startPrank(user);
         methLabVault.approve(address(router), withdrawShares);
-        uint256 assetsReceived = router.withdraw(
-            address(adapter),
-            address(methLabVault),
-            address(usdc),
-            withdrawShares,
-            ""
-        );
+        uint256 assetsReceived =
+            router.withdraw(address(adapter), address(methLabVault), address(usdc), withdrawShares, "");
         vm.stopPrank();
 
         console.log("Assets Received:", assetsReceived);
@@ -129,12 +108,7 @@ contract MethLabAdapterTest is Test {
         uint256 amount = 1000 * 1e6;
 
         vm.prank(user);
-        (uint256 shares, ) = router.deposit(
-            address(adapter),
-            address(usdc),
-            amount,
-            ""
-        );
+        (uint256 shares,) = router.deposit(address(adapter), address(usdc), amount, "");
 
         // Lock funds for 1 day
         uint256 unlockTime = block.timestamp + 1 days;
@@ -145,16 +119,8 @@ contract MethLabAdapterTest is Test {
         // Try to withdraw (should fail)
         vm.startPrank(user);
         methLabVault.approve(address(router), shares); // Approve first
-        vm.expectRevert(
-            abi.encodeWithSelector(MockMethLab.FundsLocked.selector, unlockTime)
-        );
-        router.withdraw(
-            address(adapter),
-            address(methLabVault),
-            address(usdc),
-            shares,
-            ""
-        );
+        vm.expectRevert(abi.encodeWithSelector(MockMethLab.FundsLocked.selector, unlockTime));
+        router.withdraw(address(adapter), address(methLabVault), address(usdc), shares, "");
         vm.stopPrank();
         console.log("Withdraw failed as expected (Funds Locked)");
 
@@ -169,13 +135,7 @@ contract MethLabAdapterTest is Test {
         // But let's re-approve to be safe or check allowance.
         // Actually, if expectRevert works, state is reverted, so approval is GONE.
         methLabVault.approve(address(router), shares);
-        uint256 assetsReceived = router.withdraw(
-            address(adapter),
-            address(methLabVault),
-            address(usdc),
-            shares,
-            ""
-        );
+        uint256 assetsReceived = router.withdraw(address(adapter), address(methLabVault), address(usdc), shares, "");
         vm.stopPrank();
         console.log("Withdraw success after unlock. Assets:", assetsReceived);
         assertEq(assetsReceived, amount); // 1:1 since no yield simulated here

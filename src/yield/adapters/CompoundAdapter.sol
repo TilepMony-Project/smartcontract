@@ -3,9 +3,7 @@ pragma solidity ^0.8.19;
 
 import {IYieldAdapter} from "../interfaces/IYieldAdapter.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
-import {
-    SafeERC20
-} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
+import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IComet} from "../interfaces/IComet.sol";
 
 contract CompoundAdapter is IYieldAdapter {
@@ -21,7 +19,11 @@ contract CompoundAdapter is IYieldAdapter {
         address token,
         uint256 amount,
         bytes calldata /* data */
-    ) external override returns (uint256, address) {
+    )
+        external
+        override
+        returns (uint256, address)
+    {
         // 1. Pull tokens from router
         IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
 
@@ -47,7 +49,11 @@ contract CompoundAdapter is IYieldAdapter {
         address token,
         uint256 amount,
         bytes calldata /* data */
-    ) external override returns (uint256) {
+    )
+        external
+        override
+        returns (uint256)
+    {
         // 'amount' is Shares to burn (since YieldRouter transferred 'amount' shares to us)
         uint256 rate = IComet(COMET).exchangeRate();
 
@@ -65,24 +71,23 @@ contract CompoundAdapter is IYieldAdapter {
         return assetsToWithdraw;
     }
 
-    function getProtocolInfo()
-        external
-        pure
-        override
-        returns (ProtocolInfo memory)
-    {
-        return
-            ProtocolInfo({
-                name: "Compound Finance",
-                description: "Algorithmic Money Market",
-                website: "https://compound.finance",
-                icon: "compound_icon_url"
-            });
+    function getProtocolInfo() external pure override returns (ProtocolInfo memory) {
+        return ProtocolInfo({
+            name: "Compound Finance",
+            description: "Algorithmic Money Market",
+            website: "https://compound.finance",
+            icon: "compound_icon_url"
+        });
     }
 
     function getSupplyApy(
         address /* token */
-    ) external view override returns (uint256) {
+    )
+        external
+        view
+        override
+        returns (uint256)
+    {
         uint256 utilization = IComet(COMET).getUtilization();
         uint64 supplyRate = IComet(COMET).getSupplyRate(utilization);
         uint256 secondsPerYear = 31536000;

@@ -20,16 +20,8 @@ interface IMainController {
 
     event WorkflowExecuted(address indexed user, uint256 actionsCount);
     event ActionExecuted(
-        uint256 indexed index,
-        ActionType actionType,
-        address target,
-        uint256 inputAmount,
-        uint256 outputAmount
+        uint256 indexed index, ActionType actionType, address target, uint256 inputAmount, uint256 outputAmount
     );
 
-    function executeWorkflow(
-        Action[] calldata actions,
-        address initialToken,
-        uint256 initialAmount
-    ) external payable;
+    function executeWorkflow(Action[] calldata actions, address initialToken, uint256 initialAmount) external payable;
 }

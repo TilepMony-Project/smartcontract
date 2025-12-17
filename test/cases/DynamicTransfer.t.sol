@@ -8,9 +8,7 @@ import {IMainController} from "../../src/interfaces/IMainController.sol";
 import {YieldRouter} from "../../src/yield/YieldRouter.sol";
 import {MockERC20} from "../../src/yield/mocks/MockERC20.sol";
 import {IYieldAdapter} from "../../src/yield/interfaces/IYieldAdapter.sol";
-import {
-    SafeERC20
-} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
+import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
 // Mock Adapter that returns a Share Token
@@ -27,7 +25,11 @@ contract MockShareYieldAdapter is IYieldAdapter {
         address token,
         uint256 amount,
         bytes calldata /* data */
-    ) external override returns (uint256, address) {
+    )
+        external
+        override
+        returns (uint256, address)
+    {
         // Pull underlying
         IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
 
@@ -42,26 +44,19 @@ contract MockShareYieldAdapter is IYieldAdapter {
         address token,
         uint256 amount,
         bytes calldata /* data */
-    ) external override returns (uint256) {
+    )
+        external
+        override
+        returns (uint256)
+    {
         // Burn shares (assuming they are transferred to this adapter before call or handled by caller)
         // In this mock, we just transfer underlying back.
         IERC20(token).safeTransfer(msg.sender, amount);
         return amount;
     }
 
-    function getProtocolInfo()
-        external
-        pure
-        override
-        returns (ProtocolInfo memory)
-    {
-        return
-            ProtocolInfo(
-                "Mock Yield",
-                "Mock Protocol",
-                "https://mock.yield",
-                "mock_icon"
-            );
+    function getProtocolInfo() external pure override returns (ProtocolInfo memory) {
+        return ProtocolInfo("Mock Yield", "Mock Protocol", "https://mock.yield", "mock_icon");
     }
 
     function getSupplyApy(address) external pure override returns (uint256) {
@@ -120,9 +115,7 @@ contract DynamicTransferTest is Test {
         // Let's rely on MINT action working if MockERC20 aligns.
         // If not, I'll fix it.
 
-        IMainController.Action[] memory actions = new IMainController.Action[](
-            2
-        );
+        IMainController.Action[] memory actions = new IMainController.Action[](2);
 
         // 1. MINT IDRX
         // We need to mock the `giveMe` call because standard MockERC20 might not have it.
@@ -139,12 +132,7 @@ contract DynamicTransferTest is Test {
         idrx.approve(address(controller), 1000 ether);
 
         // Action 1: YIELD
-        bytes memory yieldData = abi.encode(
-            address(mockAdapter),
-            address(idrx),
-            0,
-            ""
-        );
+        bytes memory yieldData = abi.encode(address(mockAdapter), address(idrx), 0, "");
         actions[0] = IMainController.Action({
             actionType: IMainController.ActionType.YIELD,
             targetContract: address(yieldRouter),
@@ -171,18 +159,10 @@ contract DynamicTransferTest is Test {
         uint256 userShareBalance = shareToken.balanceOf(user);
 
         console.log("User Share Balance:", userShareBalance);
-        assertEq(
-            userShareBalance,
-            1000 ether,
-            "User should receive shares via dynamic transfer"
-        );
+        assertEq(userShareBalance, 1000 ether, "User should receive shares via dynamic transfer");
 
         // 2. Controller should have 0 shares
-        assertEq(
-            shareToken.balanceOf(address(controller)),
-            0,
-            "Controller should not hold shares"
-        );
+        assertEq(shareToken.balanceOf(address(controller)), 0, "Controller should not hold shares");
 
         vm.stopPrank();
     }

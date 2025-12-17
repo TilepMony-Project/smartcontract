@@ -36,9 +36,7 @@ contract FixInitImbalance is Script {
         for (uint256 i = 0; i < pools.length; i++) {
             address pool = pools[i];
             console.log("Fixing pool:", symbols[i], pool);
-            try IInitCore(core).mintTo(pools[i], deployer) returns (
-                uint256 minted
-            ) {
+            try IInitCore(core).mintTo(pools[i], deployer) returns (uint256 minted) {
                 console.log("Minted correction shares:", minted);
             } catch {
                 console.log("Failed to mint or no correction needed.");

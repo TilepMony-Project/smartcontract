@@ -15,20 +15,12 @@ contract DeployAdaptersPart2 is Script {
         address USDC = 0x681db03Ef13e37151e9fd68920d2c34273194379;
         address USDT = 0x9a82fC0c460A499b6ce3d6d8A29835a438B5Ec28;
 
-        YieldRouter router = YieldRouter(
-            0xFD5d839EF67bb50a3395f2974419274B47D7cb90
-        );
+        YieldRouter router = YieldRouter(0xFD5d839EF67bb50a3395f2974419274B47D7cb90);
 
         // Already Deployed Comets
-        MockComet cometIDRX = MockComet(
-            0xADC863d35179FB78D05Cd7bC270117D47cB7c366
-        );
-        MockComet cometUSDC = MockComet(
-            0x36EcF1A5e8FB62Ab7289B8EAeb1083F1211679FD
-        );
-        MockComet cometUSDT = MockComet(
-            0xb01a0Dbb3334da1087f87e70FB5149dA1093E6a2
-        );
+        MockComet cometIDRX = MockComet(0xADC863d35179FB78D05Cd7bC270117D47cB7c366);
+        MockComet cometUSDC = MockComet(0x36EcF1A5e8FB62Ab7289B8EAeb1083F1211679FD);
+        MockComet cometUSDT = MockComet(0xb01a0Dbb3334da1087f87e70FB5149dA1093E6a2);
 
         // Set Exchange Rates (1.1)
         // Try/Catch just in case validation or something fails, though unlikely for Mock
@@ -47,18 +39,9 @@ contract DeployAdaptersPart2 is Script {
         router.setAdapterWhitelist(address(adapterUSDT), true);
 
         // 4. Blacklist Old Adapters
-        router.setAdapterWhitelist(
-            0x23BBF514815ac25d4FECC075C9a7E3fC18Dd1207,
-            false
-        ); // Old IDRX
-        router.setAdapterWhitelist(
-            0x53A4AEf6dAE3695271BC697eB042e9C0D31F9D87,
-            false
-        ); // Old USDC
-        router.setAdapterWhitelist(
-            0x8E50D79967c3932B8f4F6EA014A407AB925F3284,
-            false
-        ); // Old USDT
+        router.setAdapterWhitelist(0x23BBF514815ac25d4FECC075C9a7E3fC18Dd1207, false); // Old IDRX
+        router.setAdapterWhitelist(0x53A4AEf6dAE3695271BC697eB042e9C0D31F9D87, false); // Old USDC
+        router.setAdapterWhitelist(0x8E50D79967c3932B8f4F6EA014A407AB925F3284, false); // Old USDT
 
         vm.stopBroadcast();
     }

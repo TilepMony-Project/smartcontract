@@ -34,10 +34,7 @@ contract SwapScript is Script {
         vertexRouter = new VertexRouter();
 
         console.log("FusionX router deployed at:", address(fusionXRouter));
-        console.log(
-            "MerchantMoe router deployed at:",
-            address(merchantMoeRouter)
-        );
+        console.log("MerchantMoe router deployed at:", address(merchantMoeRouter));
         console.log("Vertex router deployed at:", address(vertexRouter));
 
         // 2. Set Initial Rates (1:1 for stablecoins)
@@ -62,10 +59,7 @@ contract SwapScript is Script {
         vertexAdapter = new VertexAdapter(address(vertexRouter));
 
         console.log("FusionX adapter deployed at:", address(fusionXAdapter));
-        console.log(
-            "MerchantMoe adapter deployed at:",
-            address(merchantMoeAdapter)
-        );
+        console.log("MerchantMoe adapter deployed at:", address(merchantMoeAdapter));
         console.log("Vertex adapter deployed at:", address(vertexAdapter));
 
         // 4. Deploy Aggregator & Whitelist Adapters
@@ -79,12 +73,7 @@ contract SwapScript is Script {
         vm.stopBroadcast();
     }
 
-    function _setPairRate(
-        address router,
-        address tokenIn,
-        address tokenOut,
-        uint256 rate
-    ) internal {
+    function _setPairRate(address router, address tokenIn, address tokenOut, uint256 rate) internal {
         // Use the common interface to set rates
         ISwapRouter(router).setRate(tokenIn, tokenOut, rate);
     }

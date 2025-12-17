@@ -16,9 +16,7 @@ contract DeployCometsAndAdapters is Script {
         address USDC = 0x681db03Ef13e37151e9fd68920d2c34273194379;
         address USDT = 0x9a82fC0c460A499b6ce3d6d8A29835a438B5Ec28;
 
-        YieldRouter router = YieldRouter(
-            0xFD5d839EF67bb50a3395f2974419274B47D7cb90
-        );
+        YieldRouter router = YieldRouter(0xFD5d839EF67bb50a3395f2974419274B47D7cb90);
 
         // 1. Deploy New Mock Comets (Fixed Logic)
         MockComet cometIDRX = new MockComet(IDRX, "Compound IDRX", "cIDRXv3");
@@ -42,18 +40,9 @@ contract DeployCometsAndAdapters is Script {
 
         // 4. Blacklist Old Adapters (Optional, but good practice)
         // Hardcoded old addresses from config
-        router.setAdapterWhitelist(
-            0x23BBF514815ac25d4FECC075C9a7E3fC18Dd1207,
-            false
-        ); // Old IDRX
-        router.setAdapterWhitelist(
-            0x53A4AEf6dAE3695271BC697eB042e9C0D31F9D87,
-            false
-        ); // Old USDC
-        router.setAdapterWhitelist(
-            0x8E50D79967c3932B8f4F6EA014A407AB925F3284,
-            false
-        ); // Old USDT
+        router.setAdapterWhitelist(0x23BBF514815ac25d4FECC075C9a7E3fC18Dd1207, false); // Old IDRX
+        router.setAdapterWhitelist(0x53A4AEf6dAE3695271BC697eB042e9C0D31F9D87, false); // Old USDC
+        router.setAdapterWhitelist(0x8E50D79967c3932B8f4F6EA014A407AB925F3284, false); // Old USDT
 
         vm.stopBroadcast();
     }

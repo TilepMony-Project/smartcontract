@@ -6,10 +6,8 @@ import {ISwapRouter} from "../src/swap/interfaces/ISwapRouter.sol";
 
 contract UpdateRates is Script {
     // Routers (From your recent logs)
-    address constant FUSIONX_ROUTER =
-        0x05047114AD8De5E3dc3006F2f8468F0a31C46395;
-    address constant MERCHANT_MOE_ROUTER =
-        0xa192eE8a20e8DD17a478d7A0F0A72cd5502db19d;
+    address constant FUSIONX_ROUTER = 0x05047114AD8De5E3dc3006F2f8468F0a31C46395;
+    address constant MERCHANT_MOE_ROUTER = 0xa192eE8a20e8DD17a478d7A0F0A72cd5502db19d;
     address constant VERTEX_ROUTER = 0xd64dADee7A042e96aa61514502C5545922627A26;
 
     // NEW Token Addresses (mTokens)

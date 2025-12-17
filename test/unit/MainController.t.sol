@@ -9,9 +9,7 @@ import {YieldRouter} from "../../src/yield/YieldRouter.sol";
 import {MockERC20} from "../../src/yield/mocks/MockERC20.sol";
 import {ISwapAdapter} from "../../src/swap/interfaces/ISwapAdapter.sol";
 import {IYieldAdapter} from "../../src/yield/interfaces/IYieldAdapter.sol";
-import {
-    SafeERC20
-} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
+import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
 // --- Test Adapters ---
@@ -23,10 +21,14 @@ contract TestSwapAdapter is ISwapAdapter {
         address tokenIn,
         address tokenOut,
         uint256 amountIn,
-        uint256 /* minAmountOut */,
+        uint256,
+        /* minAmountOut */
         address from,
         address to
-    ) external returns (uint256 amountOut) {
+    )
+        external
+        returns (uint256 amountOut)
+    {
         // Mock swap: 1:1 ratio
         IERC20(tokenIn).safeTransferFrom(from, address(this), amountIn);
         MockERC20(tokenOut).mint(to, amountIn); // Mint output to 'to'
@@ -41,7 +43,10 @@ contract TestYieldAdapter is IYieldAdapter {
         address token,
         uint256 amount,
         bytes calldata /* data */
-    ) external returns (uint256, address) {
+    )
+        external
+        returns (uint256, address)
+    {
         // Mock deposit: Burn token, return same amount as "shares" (just for tracking)
         IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
         return (amount, address(0));
@@ -51,24 +56,16 @@ contract TestYieldAdapter is IYieldAdapter {
         address token,
         uint256 amount,
         bytes calldata /* data */
-    ) external returns (uint256) {
+    )
+        external
+        returns (uint256)
+    {
         IERC20(token).safeTransfer(msg.sender, amount);
         return amount;
     }
 
-    function getProtocolInfo()
-        external
-        pure
-        override
-        returns (ProtocolInfo memory)
-    {
-        return
-            ProtocolInfo(
-                "Test Protocol",
-                "Test Description",
-                "https://test.com",
-                "icon_url"
-            );
+    function getProtocolInfo() external pure override returns (ProtocolInfo memory) {
+        return ProtocolInfo("Test Protocol", "Test Description", "https://test.com", "icon_url");
     }
 
     function getSupplyApy(address) external pure override returns (uint256) {
@@ -124,9 +121,7 @@ contract MainControllerTest is Test {
         usdt.approve(address(controller), 100 * 1e18);
 
         // Define Actions
-        IMainController.Action[] memory actions = new IMainController.Action[](
-            2
-        );
+        IMainController.Action[] memory actions = new IMainController.Action[](2);
 
         // Action 1: Swap USDT -> IDRX
         // swapWithProvider(adapter, tokenIn, tokenOut, amountIn, minAmountOut, to)
@@ -184,9 +179,7 @@ contract MainControllerTest is Test {
         usdt.mint(user, 100 * 1e18);
         usdt.approve(address(controller), 100 * 1e18);
 
-        IMainController.Action[] memory actions = new IMainController.Action[](
-            1
-        );
+        IMainController.Action[] memory actions = new IMainController.Action[](1);
 
         // Transfer 50% to user
         bytes memory transferData = abi.encode(address(usdt));
@@ -213,9 +206,7 @@ contract MainControllerTest is Test {
         vm.startPrank(user);
 
         // 1. Define Actions
-        IMainController.Action[] memory actions = new IMainController.Action[](
-            2
-        );
+        IMainController.Action[] memory actions = new IMainController.Action[](2);
 
         // Action 1: Mint IDRX
         // mint(token, amount)
@@ -229,12 +220,7 @@ contract MainControllerTest is Test {
         });
 
         // Action 2: Yield Deposit IDRX (using 100% of balance)
-        bytes memory yieldData = abi.encode(
-            address(testYieldAdapter),
-            address(idrx),
-            0,
-            ""
-        );
+        bytes memory yieldData = abi.encode(address(testYieldAdapter), address(idrx), 0, "");
 
         actions[1] = IMainController.Action({
             actionType: IMainController.ActionType.YIELD,

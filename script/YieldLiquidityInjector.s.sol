@@ -22,12 +22,7 @@ contract YieldLiquidityInjector is Script {
         uint256 amount;
     }
 
-    function run(
-        address vault,
-        address token,
-        uint256 newRate,
-        uint256 amountToInject
-    ) external {
+    function run(address vault, address token, uint256 newRate, uint256 amountToInject) external {
         // Targeted run for testing
         // 1. Inject Liquidity
         _mintTo(token, vault, amountToInject);
@@ -60,64 +55,19 @@ contract YieldLiquidityInjector is Script {
         Config[] memory configs = new Config[](9);
 
         // MethLab
-        configs[0] = Config(
-            "MethLab IDRX",
-            0xBe97818D0B6577410b7282F9306Ea9ed8967d56a,
-            IDRX,
-            amountIDRX
-        );
-        configs[1] = Config(
-            "MethLab USDC",
-            0xDE28623E3A209062479C4CD3240eD14819309D66,
-            USDC,
-            amountUSD
-        );
-        configs[2] = Config(
-            "MethLab USDT",
-            0x30f42E2f1931324aBC0ee9975FF63C552ab50ab7,
-            USDT,
-            amountUSD
-        );
+        configs[0] = Config("MethLab IDRX", 0xBe97818D0B6577410b7282F9306Ea9ed8967d56a, IDRX, amountIDRX);
+        configs[1] = Config("MethLab USDC", 0xDE28623E3A209062479C4CD3240eD14819309D66, USDC, amountUSD);
+        configs[2] = Config("MethLab USDT", 0x30f42E2f1931324aBC0ee9975FF63C552ab50ab7, USDT, amountUSD);
 
         // Init Capital (MockLendingPool)
-        configs[3] = Config(
-            "InitCapital IDRX",
-            0x6Adaa6312b785fcbf4904BA505Ecff4f3fe2b4e2,
-            IDRX,
-            amountIDRX
-        );
-        configs[4] = Config(
-            "InitCapital USDC",
-            0x2e01d3672be5978a0CcEada25097325f255F76e8,
-            USDC,
-            amountUSD
-        );
-        configs[5] = Config(
-            "InitCapital USDT",
-            0x99a13d0D22025EbeE7958BE133022Aa17E63a821,
-            USDT,
-            amountUSD
-        );
+        configs[3] = Config("InitCapital IDRX", 0x6Adaa6312b785fcbf4904BA505Ecff4f3fe2b4e2, IDRX, amountIDRX);
+        configs[4] = Config("InitCapital USDC", 0x2e01d3672be5978a0CcEada25097325f255F76e8, USDC, amountUSD);
+        configs[5] = Config("InitCapital USDT", 0x99a13d0D22025EbeE7958BE133022Aa17E63a821, USDT, amountUSD);
 
         // Compound (MockComet)
-        configs[6] = Config(
-            "Compound IDRX",
-            0xAaeBE3d3A7DFcC4c2C334E007dc4339d7669a411,
-            IDRX,
-            amountIDRX
-        );
-        configs[7] = Config(
-            "Compound USDC",
-            0x375b705311059aadaC34fe4BEa3C569adc4dcA8D,
-            USDC,
-            amountUSD
-        );
-        configs[8] = Config(
-            "Compound USDT",
-            0xC88C22A769FB69fD6Ed690E927f3F1CCCaDF9180,
-            USDT,
-            amountUSD
-        );
+        configs[6] = Config("Compound IDRX", 0xAaeBE3d3A7DFcC4c2C334E007dc4339d7669a411, IDRX, amountIDRX);
+        configs[7] = Config("Compound USDC", 0x375b705311059aadaC34fe4BEa3C569adc4dcA8D, USDC, amountUSD);
+        configs[8] = Config("Compound USDT", 0xC88C22A769FB69fD6Ed690E927f3F1CCCaDF9180, USDT, amountUSD);
 
         for (uint256 i = 0; i < configs.length; i++) {
             Config memory c = configs[i];
@@ -158,13 +108,8 @@ contract YieldLiquidityInjector is Script {
                 }
 
                 // Try minting shares
-                (bool success, ) = c.vault.call(
-                    abi.encodeWithSignature(
-                        "mint(address,uint256)",
-                        deployer,
-                        testShareAmount
-                    )
-                );
+                (bool success,) =
+                    c.vault.call(abi.encodeWithSignature("mint(address,uint256)", deployer, testShareAmount));
                 if (success) {
                     console.log("Success: Minted shares to deployer.");
                 } else {
@@ -183,9 +128,7 @@ contract YieldLiquidityInjector is Script {
     // Helper to robustly mint tokens
     function _mintTo(address token, address to, uint256 amount) internal {
         // Method 1: giveMe + transfer (Preferred for Mocks in this system)
-        (bool success, ) = token.call(
-            abi.encodeWithSignature("giveMe(uint256)", amount)
-        );
+        (bool success,) = token.call(abi.encodeWithSignature("giveMe(uint256)", amount));
         if (success) {
             // giveMe usually gives to msg.sender (this script contract or deployer?)
             // if broadcast is active, msg.sender is deployer EOA.
@@ -205,9 +148,7 @@ contract YieldLiquidityInjector is Script {
         }
 
         // Method 2: mint(to, amount) (Standard MockERC20)
-        (bool mintSuccess, ) = token.call(
-            abi.encodeWithSignature("mint(address,uint256)", to, amount)
-        );
+        (bool mintSuccess,) = token.call(abi.encodeWithSignature("mint(address,uint256)", to, amount));
         if (mintSuccess) {
             console.log("Minted (via mint) directly to:", to);
             return;

@@ -6,9 +6,7 @@ import {YieldRouter} from "../../src/yield/YieldRouter.sol";
 import {MethLabAdapter} from "../../src/yield/adapters/MethLabAdapter.sol";
 import {MockMethLab} from "../../src/yield/mocks/MockMethLab.sol";
 import {MockERC20} from "../../src/yield/mocks/MockERC20.sol";
-import {
-    YieldLiquidityInjector
-} from "../../script/YieldLiquidityInjector.s.sol";
+import {YieldLiquidityInjector} from "../../script/YieldLiquidityInjector.s.sol";
 
 contract YieldAccrualTest is Test {
     YieldRouter router;
@@ -42,12 +40,7 @@ contract YieldAccrualTest is Test {
 
         // 1. User Deposits 1000 USDC
         vm.prank(user);
-        (uint256 shares, ) = router.deposit(
-            address(adapter),
-            address(usdc),
-            1000 * 1e6,
-            ""
-        );
+        (uint256 shares,) = router.deposit(address(adapter), address(usdc), 1000 * 1e6, "");
         assertEq(shares, 1000 * 1e6, "Initial shares should be 1:1");
 
         // 2. Simulate Yield Injection (via Script Logic)
@@ -56,31 +49,16 @@ contract YieldAccrualTest is Test {
 
         // Mock Env Vars for Script
         // Run Script directly with args
-        injectorScript.run(
-            address(vault),
-            address(usdc),
-            uint256(1.1e18),
-            uint256(100 * 1e6)
-        );
+        injectorScript.run(address(vault), address(usdc), uint256(1.1e18), uint256(100 * 1e6));
 
         // Verify Script Effects
         assertEq(vault.exchangeRate(), 1.1e18, "Exchange rate did not update");
-        assertEq(
-            usdc.balanceOf(address(vault)),
-            1100 * 1e6,
-            "Liquidity not injected correctly"
-        );
+        assertEq(usdc.balanceOf(address(vault)), 1100 * 1e6, "Liquidity not injected correctly");
 
         // 3. User Withdraws All
         vm.startPrank(user);
         vault.approve(address(router), shares);
-        uint256 assetsReceived = router.withdraw(
-            address(adapter),
-            address(vault),
-            address(usdc),
-            shares,
-            ""
-        );
+        uint256 assetsReceived = router.withdraw(address(adapter), address(vault), address(usdc), shares, "");
         vm.stopPrank();
 
         // 4. Verify Profit

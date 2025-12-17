@@ -70,8 +70,7 @@ contract WithdrawFlowIntegrationTest is Test {
         console.log("--- Phase 1: Deposit Flow (Mint -> Swap -> Yield) ---");
 
         // Prepare Deposit Actions
-        IMainController.Action[]
-            memory depositActions = new IMainController.Action[](4);
+        IMainController.Action[] memory depositActions = new IMainController.Action[](4);
 
         // Action 1: Mint 100 USDT
         uint256 mintAmount = 100 * 1e6;
@@ -86,14 +85,7 @@ contract WithdrawFlowIntegrationTest is Test {
         depositActions[1] = IMainController.Action({
             actionType: IMainController.ActionType.SWAP,
             targetContract: address(swapAggregator),
-            data: abi.encode(
-                address(fusionXAdapter),
-                address(usdt),
-                address(idrx),
-                0,
-                0,
-                address(0)
-            ),
+            data: abi.encode(address(fusionXAdapter), address(usdt), address(idrx), 0, 0, address(0)),
             inputAmountPercentage: 10000
         });
 
@@ -118,11 +110,7 @@ contract WithdrawFlowIntegrationTest is Test {
         // Verify Deposit Success (User holds shares)
         uint256 userShares = mockComet.balanceOf(user);
         uint256 expectedShares = 1650000 * 1e6;
-        assertEq(
-            userShares,
-            expectedShares,
-            "User should have shares after deposit"
-        );
+        assertEq(userShares, expectedShares, "User should have shares after deposit");
         console.log("User Shares (Before Withdraw):", userShares);
 
         console.log("--- Phase 2: Withdraw Flow ---");
@@ -131,8 +119,7 @@ contract WithdrawFlowIntegrationTest is Test {
         mockComet.approve(address(controller), userShares);
 
         // Prepare Withdraw Actions
-        IMainController.Action[]
-            memory withdrawActions = new IMainController.Action[](1);
+        IMainController.Action[] memory withdrawActions = new IMainController.Action[](1);
 
         // Action 1: YIELD_WITHDRAW
         // Need to encode: (adapter, shareToken, underlyingToken, placeholderAmount, adapterData)
@@ -165,18 +152,10 @@ contract WithdrawFlowIntegrationTest is Test {
         console.log("Controller IDRX (After Withdraw):", controllerIdrx);
 
         // We withdrew 50% -> 825,000 shares burned.
-        assertEq(
-            userSharesAfter,
-            expectedShares / 2,
-            "User should have 50% shares remaining"
-        );
+        assertEq(userSharesAfter, expectedShares / 2, "User should have 50% shares remaining");
 
         // Controller should hold the redeemed IDRX
-        assertEq(
-            controllerIdrx,
-            825000 * 1e6,
-            "Controller should hold redeemed IDRX"
-        );
+        assertEq(controllerIdrx, 825000 * 1e6, "Controller should hold redeemed IDRX");
 
         vm.stopPrank();
     }

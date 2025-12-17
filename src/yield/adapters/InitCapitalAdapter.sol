@@ -2,22 +2,25 @@
 pragma solidity ^0.8.19;
 
 import {IYieldAdapter} from "../interfaces/IYieldAdapter.sol";
+import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IInitCore} from "../interfaces/initCore/IInitCore.sol";
 import {ILendingPool} from "../interfaces/initCore/ILendingPool.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract InitCapitalAdapter is IYieldAdapter {
-    address public immutable initCore;
-    mapping(address => address) public underlyingToPool;
+    using SafeERC20 for IERC20;
 
-    error PoolNotFound(address token);
+    address public immutable INIT_CORE;
+    mapping(address => address) public tokenToPool;
 
-    constructor(address _initCore) {
-        initCore = _initCore;
+    error PoolNotFound(address token); // Keep this error for setPool, but withdraw uses require
+
+    constructor(address _core) {
+        INIT_CORE = _core;
     }
 
     function setPool(address token, address pool) external {
-        underlyingToPool[token] = pool;
+        tokenToPool[token] = pool;
     }
 
     function deposit(
@@ -27,20 +30,34 @@ contract InitCapitalAdapter is IYieldAdapter {
     )
         external
         override
-        returns (uint256)
+        returns (uint256, address)
     {
-        address pool = underlyingToPool[token];
+        address pool = tokenToPool[token];
         if (pool == address(0)) revert PoolNotFound(token);
 
-        // 1. Transfer tokens from Router to this adapter
-        IERC20(token).transferFrom(msg.sender, address(this), amount);
+        // 1. Transfer underlying from Router (msg.sender) to this adapter
+        IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
 
-        // 2. Transfer tokens to the Lending Pool
-        IERC20(token).transfer(pool, amount);
+        // 2. Approve Lending Pool to spend tokens
+        // forceApprove ensures compatibility
+        IERC20(token).forceApprove(pool, amount);
 
-        // 3. Call mintTo on InitCore
-        // Shares are minted to this adapter
-        return IInitCore(initCore).mintTo(pool, address(this));
+        // 3. Deposit to Init Capital via Core (or Pool directly?)
+        // Docs: "Two steps to mint: transfer underlying to pool, then call mintTo".
+        // Step A: Transfer underlying to Pool
+        IERC20(token).safeTransfer(pool, amount);
+
+        // Step B: Call mintTo on Core
+        // Note: IInitCore.mint (or mintTo) typically mints shares to the `to` address.
+        // We mint to `address(this)` first.
+        uint256 sharesMinted = IInitCore(INIT_CORE).mintTo(pool, address(this));
+
+        // 4. Forward shares to Router
+        if (sharesMinted > 0) {
+            IERC20(pool).safeTransfer(msg.sender, sharesMinted);
+        }
+
+        return (sharesMinted, pool);
     }
 
     function withdraw(
@@ -52,23 +69,22 @@ contract InitCapitalAdapter is IYieldAdapter {
         override
         returns (uint256)
     {
-        address pool = underlyingToPool[token];
-        if (pool == address(0)) revert PoolNotFound(token);
+        address pool = tokenToPool[token];
+        require(pool != address(0), "Pool not found");
 
-        // 1. Transfer shares (pool token) to the Lending Pool
-        // Note: 'amount' here is treated as shares amount for simplicity,
-        // or we need a way to convert. The interface says 'amount' of tokens to withdraw?
-        // Usually withdraw takes share amount or asset amount.
-        // InitCore burnTo takes 'pool' and 'receiver'. It likely burns ALL shares sent to the pool?
-        // Or it burns what was transferred.
-        // Let's assume we transfer 'amount' of shares.
-        IERC20(pool).transfer(pool, amount);
+        // 1. Burn shares using Init Core
+        // Note: Adapter holds shares (transferred from Router).
+        // Init Capital `burnTo` requires shares to be burned.
+        // Does `burnTo` pull shares? Or do we need to transfer shares to pool first?
+        // Usually: Transfer shares to Pool, then call burnTo.
+        IERC20(pool).safeTransfer(pool, amount);
 
-        // 2. Call burnTo on InitCore
-        uint256 amountReceived = IInitCore(initCore).burnTo(pool, address(this));
+        // 2. Call burnTo logic
+        // returns amount of underlying redeemed
+        uint256 amountReceived = IInitCore(INIT_CORE).burnTo(pool, address(this));
 
-        // 3. Transfer underlying tokens to Router (msg.sender)
-        IERC20(token).transfer(msg.sender, amountReceived);
+        // 3. Transfer underlying to Router (msg.sender)
+        IERC20(token).safeTransfer(msg.sender, amountReceived);
 
         return amountReceived;
     }
@@ -82,12 +98,19 @@ contract InitCapitalAdapter is IYieldAdapter {
         });
     }
 
-    function getSupplyAPY(address token) external view returns (uint256) {
-        address pool = underlyingToPool[token];
+    function getSupplyApy(address token) external view override returns (uint256) {
+        address pool = tokenToPool[token];
         if (pool == address(0)) return 0;
 
-        uint256 rate = ILendingPool(pool).getSupplyRate_e18();
-        // Rate is per second scaled by 1e18
-        return (rate * 365 days * 100) / 1e18;
+        // Init Capital usually provides rate per second
+        uint256 supplyRate = ILendingPool(pool).getSupplyRateE18();
+
+        // APY = (Rate * SecondsPerYear * 100) / 1e18?
+        // If rate is already e18 scaled?
+        // Let's assume standard calculation
+        uint256 secondsPerYear = 31536000;
+        // Return APY in 1e18 scale (WAD).
+        // e.g. 5% = 0.05e18 = 5e16.
+        return supplyRate * secondsPerYear;
     }
 }

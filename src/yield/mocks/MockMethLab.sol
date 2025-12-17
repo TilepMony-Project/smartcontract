@@ -2,24 +2,31 @@
 pragma solidity ^0.8.19;
 
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
-import {ERC20} from "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
+import {IERC20Metadata} from "openzeppelin-contracts/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IMethLab} from "../interfaces/IMethLab.sol";
+import {MockERC20} from "./MockERC20.sol";
 
-contract MockMethLab is IMethLab, ERC20 {
-    IERC20 public immutable asset;
+contract MockMethLab is IMethLab, MockERC20 {
+    using SafeERC20 for IERC20;
+
+    IERC20 public immutable ASSET;
     uint256 public exchangeRate = 1e18; // 1 share = 1 asset initially
-    uint256 public currentAPY = 5e16; // Default 5% APY
+    uint256 public currentApy = 5e16; // Default 5% APY
     uint256 public lockUntil;
+    uint256 public supplyRate = 0; // New variable for getSupplyRateE18
 
     error FundsLocked(uint256 unlockTime);
 
-    constructor(address _asset) ERC20("MethLab Mock", "mMOCK") {
-        asset = IERC20(_asset);
+    constructor(address _asset, string memory name, string memory symbol)
+        MockERC20(name, symbol, IERC20Metadata(_asset).decimals())
+    {
+        ASSET = IERC20(_asset);
     }
 
     function deposit(uint256 amount, address receiver) external override returns (uint256 shares) {
         shares = (amount * 1e18) / exchangeRate;
-        asset.transferFrom(msg.sender, address(this), amount);
+        ASSET.safeTransferFrom(msg.sender, address(this), amount);
         _mint(receiver, shares);
     }
 
@@ -28,7 +35,7 @@ contract MockMethLab is IMethLab, ERC20 {
 
         assets = (shares * exchangeRate) / 1e18;
         _burn(msg.sender, shares);
-        asset.transfer(receiver, assets);
+        ASSET.safeTransfer(receiver, assets);
     }
 
     function convertToAssets(uint256 shares) external view override returns (uint256) {
@@ -45,8 +52,8 @@ contract MockMethLab is IMethLab, ERC20 {
     }
 
     // Helper to set APY (Testnet feature)
-    function setAPY(uint256 _apy) external {
-        currentAPY = _apy;
+    function setApy(uint256 _apy) external {
+        currentApy = _apy;
     }
 
     // Helper to set Lock (Testnet feature)
@@ -54,7 +61,11 @@ contract MockMethLab is IMethLab, ERC20 {
         lockUntil = _timestamp;
     }
 
-    function getAPY() external view override returns (uint256) {
-        return currentAPY;
+    function getApy() external view override returns (uint256) {
+        return currentApy;
+    }
+
+    function getSupplyRateE18() external view returns (uint256) {
+        return supplyRate;
     }
 }

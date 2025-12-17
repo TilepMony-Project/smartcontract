@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import "forge-std/Test.sol";
-import "forge-std/console.sol";
+import {Test, console} from "forge-std/Test.sol";
 import {MethLabAdapter} from "../../../src/yield/adapters/MethLabAdapter.sol";
 import {MockMethLab} from "../../../src/yield/mocks/MockMethLab.sol";
 import {MockERC20} from "../../../src/yield/mocks/MockERC20.sol";
@@ -17,7 +16,7 @@ contract MethLabAdapterTest is Test {
 
     function setUp() public {
         usdc = new MockERC20("USDC", "USDC", 6);
-        methLabVault = new MockMethLab(address(usdc));
+        methLabVault = new MockMethLab(address(usdc), "MethLab Mock", "mMOCK");
         adapter = new MethLabAdapter();
         router = new YieldRouter();
 
@@ -42,7 +41,7 @@ contract MethLabAdapterTest is Test {
         console.log("Vault Balance Before:", usdc.balanceOf(address(methLabVault)));
 
         vm.prank(user);
-        uint256 shares = router.deposit(address(adapter), address(usdc), amount, "");
+        (uint256 shares,) = router.deposit(address(adapter), address(usdc), amount, "");
 
         console.log("Deposited Amount:", amount);
         console.log("Shares Received:", shares);
@@ -60,7 +59,7 @@ contract MethLabAdapterTest is Test {
         uint256 amount = 1000 * 1e6;
 
         vm.prank(user);
-        uint256 shares = router.deposit(address(adapter), address(usdc), amount, "");
+        (uint256 shares,) = router.deposit(address(adapter), address(usdc), amount, "");
 
         console.log("Initial Deposit Shares:", shares);
 
@@ -72,8 +71,11 @@ contract MethLabAdapterTest is Test {
         uint256 withdrawShares = shares / 2;
         console.log("Withdrawing Shares:", withdrawShares);
 
-        vm.prank(user);
-        uint256 assetsReceived = router.withdraw(address(adapter), address(usdc), withdrawShares, "");
+        vm.startPrank(user);
+        methLabVault.approve(address(router), withdrawShares);
+        uint256 assetsReceived =
+            router.withdraw(address(adapter), address(methLabVault), address(usdc), withdrawShares, "");
+        vm.stopPrank();
 
         console.log("Assets Received:", assetsReceived);
         console.log("User Balance After Withdraw:", usdc.balanceOf(user));
@@ -90,13 +92,13 @@ contract MethLabAdapterTest is Test {
         console.log("--- Testing APY ---");
 
         // Default APY
-        uint256 apy = adapter.getSupplyAPY(address(usdc));
+        uint256 apy = adapter.getSupplyApy(address(usdc));
         console.log("Default APY:", apy);
         assertEq(apy, 5e16);
 
         // Update APY
-        methLabVault.setAPY(10e16); // 10%
-        apy = adapter.getSupplyAPY(address(usdc));
+        methLabVault.setApy(10e16); // 10%
+        apy = adapter.getSupplyApy(address(usdc));
         console.log("Updated APY:", apy);
         assertEq(apy, 10e16);
     }
@@ -106,7 +108,7 @@ contract MethLabAdapterTest is Test {
         uint256 amount = 1000 * 1e6;
 
         vm.prank(user);
-        uint256 shares = router.deposit(address(adapter), address(usdc), amount, "");
+        (uint256 shares,) = router.deposit(address(adapter), address(usdc), amount, "");
 
         // Lock funds for 1 day
         uint256 unlockTime = block.timestamp + 1 days;
@@ -114,9 +116,12 @@ contract MethLabAdapterTest is Test {
         console.log("Funds Locked Until:", unlockTime);
 
         // Try to withdraw (should fail)
-        vm.prank(user);
+        // Try to withdraw (should fail)
+        vm.startPrank(user);
+        methLabVault.approve(address(router), shares); // Approve first
         vm.expectRevert(abi.encodeWithSelector(MockMethLab.FundsLocked.selector, unlockTime));
-        router.withdraw(address(adapter), address(usdc), shares, "");
+        router.withdraw(address(adapter), address(methLabVault), address(usdc), shares, "");
+        vm.stopPrank();
         console.log("Withdraw failed as expected (Funds Locked)");
 
         // Fast forward time
@@ -124,8 +129,14 @@ contract MethLabAdapterTest is Test {
         console.log("Time warped to:", block.timestamp);
 
         // Withdraw should succeed now
-        vm.prank(user);
-        uint256 assetsReceived = router.withdraw(address(adapter), address(usdc), shares, "");
+        vm.startPrank(user);
+        // Approval persists? Or re-approve?
+        // Since revert happened, approval might be rolled back? No, expectRevert catches it.
+        // But let's re-approve to be safe or check allowance.
+        // Actually, if expectRevert works, state is reverted, so approval is GONE.
+        methLabVault.approve(address(router), shares);
+        uint256 assetsReceived = router.withdraw(address(adapter), address(methLabVault), address(usdc), shares, "");
+        vm.stopPrank();
         console.log("Withdraw success after unlock. Assets:", assetsReceived);
         assertEq(assetsReceived, amount); // 1:1 since no yield simulated here
     }

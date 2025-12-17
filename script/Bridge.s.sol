@@ -65,7 +65,7 @@ contract BridgeScript is Script {
         prefix = json.readString(string.concat(".", chainIdStr));
     }
 
-    function _readAddressOptional(string memory key) internal returns (address value, bool exists) {
+    function _readAddressOptional(string memory key) internal view returns (address value, bool exists) {
         try vm.envAddress(key) returns (address addr) {
             value = addr;
             exists = true;
@@ -75,34 +75,8 @@ contract BridgeScript is Script {
         }
     }
 
-    function _deployRouter(address owner) internal returns (AxelarBridgeRouter router) {
-        bytes memory bytecode = abi.encodePacked(type(AxelarBridgeRouter).creationCode, abi.encode(owner));
-        bytes32 initCodeHash = keccak256(bytecode);
-        address predicted = vm.computeCreate2Address(ROUTER_SALT, initCodeHash, CREATE2_FACTORY_ADDR);
-
-        if (predicted.code.length == 0) {
-            router = new AxelarBridgeRouter{salt: ROUTER_SALT}(owner);
-            require(address(router) == predicted, "Router address mismatch");
-            console.log("AxelarBridgeRouter deployed at:", address(router));
-            console.log("Router owner:", owner);
-        } else {
-            router = AxelarBridgeRouter(predicted);
-            console.log("AxelarBridgeRouter already deployed at:", predicted);
-        }
-    }
-
-    function _deployAdapter(address routerAddr) internal returns (AxelarBridgeAdapter adapter) {
-        bytes memory bytecode = abi.encodePacked(type(AxelarBridgeAdapter).creationCode, abi.encode(routerAddr));
-        bytes32 initCodeHash = keccak256(bytecode);
-        address predicted = vm.computeCreate2Address(ADAPTER_SALT, initCodeHash, CREATE2_FACTORY_ADDR);
-
-        if (predicted.code.length == 0) {
-            adapter = new AxelarBridgeAdapter{salt: ADAPTER_SALT}(routerAddr);
-            require(address(adapter) == predicted, "Adapter address mismatch");
-            console.log("AxelarBridgeAdapter deployed at:", address(adapter));
-        } else {
-            adapter = AxelarBridgeAdapter(predicted);
-            console.log("AxelarBridgeAdapter already deployed at:", predicted);
-        }
+    function _readAddressOr(string memory key, address defaultValue) internal view returns (address) {
+        (address value, bool exists) = _readAddressOptional(key);
+        return exists ? value : defaultValue;
     }
 }

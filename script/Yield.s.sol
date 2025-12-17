@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import "forge-std/Script.sol";
-import "forge-std/console.sol";
+import {Script} from "forge-std/Script.sol";
+import {console} from "forge-std/console.sol";
 import {YieldRouter} from "../src/yield/YieldRouter.sol";
 import {MethLabAdapter} from "../src/yield/adapters/MethLabAdapter.sol";
 import {InitCapitalAdapter} from "../src/yield/adapters/InitCapitalAdapter.sol";
@@ -57,16 +57,17 @@ contract YieldScript is Script {
     }
 
     function _setupMethLab(MethLabAdapter adapter, address token, string memory symbol) internal {
-        MockMethLab vault = new MockMethLab(token);
+        MockMethLab vault = new MockMethLab(token, string.concat("MethLab Yield ", symbol), string.concat("ml", symbol));
         adapter.setVault(token, address(vault));
         console.log(string.concat("MethLab Vault ", symbol, " deployed at:"), address(vault));
 
         // Optional: Set default APY (e.g., 10%)
-        vault.setAPY(10e16);
+        vault.setApy(10e16);
     }
 
     function _setupInitCapital(InitCapitalAdapter adapter, address token, string memory symbol) internal {
-        MockLendingPool pool = new MockLendingPool(token);
+        MockLendingPool pool =
+            new MockLendingPool(token, string.concat("Init Capital Yield ", symbol), string.concat("in", symbol));
         adapter.setPool(token, address(pool));
         console.log(string.concat("InitCapital Pool ", symbol, " deployed at:"), address(pool));
 
@@ -76,7 +77,7 @@ contract YieldScript is Script {
     }
 
     function _setupCompound(YieldRouter router, address token, string memory symbol) internal {
-        MockComet comet = new MockComet(token);
+        MockComet comet = new MockComet(token, string.concat("Compound Yield ", symbol), string.concat("cm", symbol));
         CompoundAdapter adapter = new CompoundAdapter(address(comet));
         router.setAdapterWhitelist(address(adapter), true);
 

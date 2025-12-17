@@ -3,13 +3,16 @@ pragma solidity ^0.8.19;
 
 import {IYieldAdapter} from "../interfaces/IYieldAdapter.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IComet} from "../interfaces/IComet.sol";
 
 contract CompoundAdapter is IYieldAdapter {
-    address public immutable comet; // The Compound V3 Comet contract address (e.g., cUSDCv3)
+    using SafeERC20 for IERC20;
+
+    address public immutable COMET; // The Compound V3 Comet contract address (e.g., cUSDCv3)
 
     constructor(address _comet) {
-        comet = _comet;
+        COMET = _comet;
     }
 
     function deposit(
@@ -19,20 +22,27 @@ contract CompoundAdapter is IYieldAdapter {
     )
         external
         override
-        returns (uint256)
+        returns (uint256, address)
     {
-        // 1. Transfer tokens from Router to this adapter
-        IERC20(token).transferFrom(msg.sender, address(this), amount);
+        // 1. Pull tokens from router
+        IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
 
-        // 2. Approve Comet to spend tokens
-        IERC20(token).approve(comet, amount);
+        // 2. Approve Compound Comet to spend tokens
+        IERC20(token).forceApprove(COMET, amount);
 
         // 3. Supply to Compound V3
-        IComet(comet).supply(token, amount);
+        // In Compound V3 (and our Mock), this mints `comet` tokens (shares) to `address(this)`.
+        IComet(COMET).supply(token, amount);
 
-        // In Compound V3, you don't get a receipt token (cToken) for the base asset.
-        // Your balance is tracked internally.
-        return amount;
+        // 4. Forward the received shares (Comet Token) to the Router (msg.sender)
+        // Note: The Comet contract address IS the token address for the shares.
+        uint256 sharesBalance = IERC20(COMET).balanceOf(address(this));
+        if (sharesBalance > 0) {
+            IERC20(COMET).safeTransfer(msg.sender, sharesBalance);
+        }
+
+        // Return amount of underlying deposited and the share token address (comet)
+        return (sharesBalance, COMET);
     }
 
     function withdraw(
@@ -44,13 +54,21 @@ contract CompoundAdapter is IYieldAdapter {
         override
         returns (uint256)
     {
+        // 'amount' is Shares to burn (since YieldRouter transferred 'amount' shares to us)
+        uint256 rate = IComet(COMET).exchangeRate();
+
+        // Calculate Assets to withdraw: Assets = Shares * Rate / 1e18
+        // e.g. 171 shares * 1.1 = 188.1 assets
+        uint256 assetsToWithdraw = (amount * rate) / 1e18;
+
         // 1. Withdraw from Compound V3 to this adapter
-        IComet(comet).withdraw(token, amount);
+        // Compound V3 (Mock) expects ASSET amount to withdraw
+        IComet(COMET).withdraw(token, assetsToWithdraw);
 
         // 2. Transfer tokens to Router (msg.sender)
-        IERC20(token).transfer(msg.sender, amount);
+        IERC20(token).safeTransfer(msg.sender, assetsToWithdraw);
 
-        return amount;
+        return assetsToWithdraw;
     }
 
     function getProtocolInfo() external pure override returns (ProtocolInfo memory) {
@@ -62,13 +80,21 @@ contract CompoundAdapter is IYieldAdapter {
         });
     }
 
-    function getSupplyAPY() external view returns (uint256) {
-        uint256 utilization = IComet(comet).getUtilization();
-        uint64 supplyRate = IComet(comet).getSupplyRate(utilization);
+    function getSupplyApy(
+        address /* token */
+    )
+        external
+        view
+        override
+        returns (uint256)
+    {
+        uint256 utilization = IComet(COMET).getUtilization();
+        uint64 supplyRate = IComet(COMET).getSupplyRate(utilization);
+        uint256 secondsPerYear = 31536000;
 
-        // Supply Rate is per second, scaled by 1e18
-        // APY = (Rate / 1e18) * SecondsPerYear * 100
-        uint256 secondsPerYear = 365 * 24 * 60 * 60;
-        return (uint256(supplyRate) * secondsPerYear * 100) / 1e18;
+        // APY = Rate per second * Seconds per year
+        // MockComet returns rate in 1e18 scale (e.g., 1e9 ~= 3% per year).
+        // Result is in 1e18 scale (e.g., 0.03 * 1e18).
+        return uint256(supplyRate) * secondsPerYear;
     }
 }

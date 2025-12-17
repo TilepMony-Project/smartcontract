@@ -11,7 +11,7 @@ contract AxelarBridgeRouter is BaseBridgeRouter {
 
     function quoteFee(string calldata destinationChain, uint256 amount, bytes calldata extraData)
         public
-        view
+        pure
         override
         returns (uint256)
     {
@@ -23,6 +23,6 @@ contract AxelarBridgeRouter is BaseBridgeRouter {
     }
 
     function _providerId() internal pure override returns (bytes32) {
-        return keccak256("AXELAR_ROUTER");
+        return 0x98155e71415442750868f9b9f5f0b5d6255152504620f5c1569426fcd9f58296; // keccak256("AXELAR_ROUTER")
     }
 }

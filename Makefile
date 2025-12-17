@@ -1,4 +1,4 @@
-.PHONY: build size rpc run deploy deploy-token deploy-yield deploy-swap
+.PHONY: build size rpc run deploy deploy-token deploy-yield deploy-swap deploy-controller check-router-liquidity
 
 GREEN := \033[0;32m
 CYAN := \033[0;36m
@@ -59,8 +59,43 @@ deploy-swap:
 		--verify \
 		--etherscan-api-key $(ETHERSCAN_API_KEY)
 
+inject-liquidity:
+	@echo "$(CYAN)💉 [INJECT] Injecting initial liquidity...$(RESET)"
+	@forge script script/YieldLiquidityInjector.s.sol:YieldLiquidityInjector \
+		--rpc-url $(RPC_URL) \
+		--broadcast -vvvv \
+		--legacy
+
+
+add-liquidity-router:
+	@echo "$(CYAN)💧 [LIQUIDITY] Adding liquidity to routers...$(RESET)"
+	@forge script script/AddLiquidity.s.sol \
+		--rpc-url $(RPC_URL) \
+		--broadcast -vvv
+
+update-rates:
+	@echo "$(CYAN)🔄 [UPDATE] Updating exchange rates for mTokens...$(RESET)"
+	@forge script script/UpdateRates.s.sol \
+		--rpc-url $(RPC_URL) \
+		--broadcast -vvv
+
+check-router-liquidity:
+	@echo "$(CYAN)🔍 [CHECK] Checking router liquidity...$(RESET)"
+	@forge script script/CheckRouterBalance.s.sol \
+		--rpc-url $(RPC_URL) \
+		-vvv
+
+deploy-controller:
+	@echo "$(CYAN)🚚 [DEPLOY] Deploying Main Controller...$(RESET)"
+	@forge script script/MainController.s.sol:MainControllerScript \
+		--rpc-url $(RPC_URL) \
+		--broadcast -vvv \
+		--verify \
+		--etherscan-api-key $(ETHERSCAN_API_KEY)
+
 deploy:
 	@clear
 	@$(MAKE) deploy-token
 	@$(MAKE) deploy-yield
 	@$(MAKE) deploy-swap
+	@$(MAKE) deploy-controller

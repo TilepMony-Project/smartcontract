@@ -36,5 +36,5 @@ interface IMethLab {
      * @notice Returns the current APY of the vault (Mock/Testnet only).
      * @return apy The current APY in 1e18 format.
      */
-    function getAPY() external view returns (uint256 apy);
+    function getApy() external view returns (uint256 apy);
 }

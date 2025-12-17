@@ -16,7 +16,9 @@ interface IYieldAdapter {
      * @param data Additional data required by the protocol (optional).
      * @return amountOut The amount of receipt tokens or liquidity received.
      */
-    function deposit(address token, uint256 amount, bytes calldata data) external returns (uint256 amountOut);
+    function deposit(address token, uint256 amount, bytes calldata data)
+        external
+        returns (uint256 amountOut, address shareToken);
 
     /**
      * @notice Withdraws assets from the underlying protocol.
@@ -31,4 +33,9 @@ interface IYieldAdapter {
      * @notice Returns metadata about the protocol.
      */
     function getProtocolInfo() external view returns (ProtocolInfo memory);
+
+    /**
+     * @notice Returns the current Supply APY for the given token in 1e18 scale.
+     */
+    function getSupplyApy(address token) external view returns (uint256);
 }

@@ -7,4 +7,5 @@ interface IComet {
     function getSupplyRate(uint256 utilization) external view returns (uint64);
     function getUtilization() external view returns (uint256);
     function baseToken() external view returns (address);
+    function exchangeRate() external view returns (uint256);
 }

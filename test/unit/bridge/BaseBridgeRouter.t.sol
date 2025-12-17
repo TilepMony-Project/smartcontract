@@ -4,7 +4,8 @@ pragma solidity ^0.8.30;
 import {Test} from "forge-std/Test.sol";
 import {BaseBridgeRouter} from "src/bridge/routers/BaseBridgeRouter.sol";
 import {IBridgeRouter} from "src/bridge/interfaces/IBridgeRouter.sol";
-import {IBridgeAdapter} from "src/bridge/interfaces/IBridgeAdapter.sol";
+import {IBridgeRouter} from "src/bridge/interfaces/IBridgeRouter.sol";
+// import {IBridgeAdapter} from "src/bridge/interfaces/IBridgeAdapter.sol";
 import {MockCrossChainToken} from "test/mocks/MockCrossChainToken.sol";
 
 contract MockBridgeRouter is BaseBridgeRouter {

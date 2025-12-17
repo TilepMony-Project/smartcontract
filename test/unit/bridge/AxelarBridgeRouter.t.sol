@@ -22,12 +22,12 @@ contract AxelarBridgeRouterTest is Test {
         deal(USER, 10 ether);
     }
 
-    function testProviderId() public {
+    function testProviderId() public view {
         bytes32 expected = keccak256("AXELAR_ROUTER");
         assertEq(router.providerId(), expected);
     }
 
-    function testQuoteFeeMatchesFormula() public {
+    function testQuoteFeeMatchesFormula() public view {
         uint256 amount = 5 ether;
         bytes memory extraData = hex"1234";
         uint256 expected =

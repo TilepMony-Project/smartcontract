@@ -66,7 +66,7 @@ contract BridgeScript is Script {
         prefix = json.readString(string.concat(".", chainIdStr));
     }
 
-    function _readAddressOptional(string memory key) internal returns (address value, bool exists) {
+    function _readAddressOptional(string memory key) internal view returns (address value, bool exists) {
         try vm.envAddress(key) returns (address addr) {
             value = addr;
             exists = true;
@@ -76,7 +76,7 @@ contract BridgeScript is Script {
         }
     }
 
-    function _readAddressOr(string memory key, address defaultValue) internal returns (address) {
+    function _readAddressOr(string memory key, address defaultValue) internal view returns (address) {
         (address value, bool exists) = _readAddressOptional(key);
         return exists ? value : defaultValue;
     }

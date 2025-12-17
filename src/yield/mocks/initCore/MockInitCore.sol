@@ -25,7 +25,7 @@ contract MockInitCore is IInitCore {
         // shares = totalAssets * 1e18 / rate
         // SCALING FIX: Underlying is 6 decimals, Shares are 14 (6+8).
         // We need to scale up by 1e8.
-        uint256 requiredShares = ((totalAssets * 1e18) / exchangeRate) * 1e8;
+        uint256 requiredShares = (totalAssets * 1e18 * 1e8) / exchangeRate;
 
         if (requiredShares <= totalShares) return 0; // No new deposit
 
@@ -37,7 +37,7 @@ contract MockInitCore is IInitCore {
     }
 
     function burnTo(address pool, address receiver) external override returns (uint256) {
-        address underlying = ILendingPool(pool).underlyingToken();
+        // address underlying = ILendingPool(pool).underlyingToken();
 
         // 1. Get shares held by the Pool (User/Router transfers shares to Pool before burning)
         uint256 sharesToBurn = MockLendingPool(pool).balanceOf(pool);

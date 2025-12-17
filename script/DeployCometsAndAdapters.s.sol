@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import "forge-std/Script.sol";
-import "../src/yield/mocks/MockComet.sol";
-import "../src/yield/adapters/CompoundAdapter.sol";
-import "../src/yield/YieldRouter.sol";
+import {Script} from "forge-std/Script.sol";
+import {MockComet} from "../src/yield/mocks/MockComet.sol";
+import {CompoundAdapter} from "../src/yield/adapters/CompoundAdapter.sol";
+import {YieldRouter} from "../src/yield/YieldRouter.sol";
 
 contract DeployCometsAndAdapters is Script {
     function run() external {
@@ -12,31 +12,32 @@ contract DeployCometsAndAdapters is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         // Tokens
-        address IDRX = 0xc39DfE81DcAd49F1Da4Ff8d41f723922Febb75dc;
-        address USDC = 0x681db03Ef13e37151e9fd68920d2c34273194379;
-        address USDT = 0x9a82fC0c460A499b6ce3d6d8A29835a438B5Ec28;
+        address idrx = 0xc39DfE81DcAd49F1Da4Ff8d41f723922Febb75dc;
+        address usdc = 0x681db03Ef13e37151e9fd68920d2c34273194379;
+        address usdt = 0x9a82fC0c460A499b6ce3d6d8A29835a438B5Ec28;
 
         YieldRouter router = YieldRouter(0xFD5d839EF67bb50a3395f2974419274B47D7cb90);
 
         // 1. Deploy New Mock Comets (Fixed Logic)
-        MockComet cometIDRX = new MockComet(IDRX, "Compound IDRX", "cIDRXv3");
-        MockComet cometUSDC = new MockComet(USDC, "Compound USDC", "cUSDCv3");
-        MockComet cometUSDT = new MockComet(USDT, "Compound USDT", "cUSDTv3");
+        MockComet cometIdrx = new MockComet(idrx, "Compound IDRX", "cIDRXv3");
+        MockComet cometUsdc = new MockComet(usdc, "Compound USDC", "cUSDCv3");
+        MockComet cometUsdt = new MockComet(usdt, "Compound USDT", "cUSDTv3");
 
         // Set Exchange Rates (1.1)
-        cometIDRX.setExchangeRate(1.1e18);
-        cometUSDC.setExchangeRate(1.1e18);
-        cometUSDT.setExchangeRate(1.1e18);
+        cometIdrx.setExchangeRate(1.1e18);
+        cometUsdc.setExchangeRate(1.1e18);
+        cometUsdt.setExchangeRate(1.1e18);
 
         // 2. Deploy New Adapters (Pointing to New Comets)
-        CompoundAdapter adapterIDRX = new CompoundAdapter(address(cometIDRX));
-        CompoundAdapter adapterUSDC = new CompoundAdapter(address(cometUSDC));
-        CompoundAdapter adapterUSDT = new CompoundAdapter(address(cometUSDT));
+        CompoundAdapter adapterIdrx = new CompoundAdapter(address(cometIdrx));
+        CompoundAdapter adapterUsdc = new CompoundAdapter(address(cometUsdc));
+        CompoundAdapter adapterUsdt = new CompoundAdapter(address(cometUsdt));
 
         // 3. Whitelist New Adapters
-        router.setAdapterWhitelist(address(adapterIDRX), true);
-        router.setAdapterWhitelist(address(adapterUSDC), true);
-        router.setAdapterWhitelist(address(adapterUSDT), true);
+        // 3. Whitelist New Adapters
+        router.setAdapterWhitelist(address(adapterIdrx), true);
+        router.setAdapterWhitelist(address(adapterUsdc), true);
+        router.setAdapterWhitelist(address(adapterUsdt), true);
 
         // 4. Blacklist Old Adapters (Optional, but good practice)
         // Hardcoded old addresses from config

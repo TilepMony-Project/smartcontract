@@ -24,7 +24,10 @@ abstract contract AxelarExecutable {
         bytes calldata payload
     ) external virtual {
         // require(msg.sender == address(gateway), "AxelarExecutable: only gateway"kal);
-        bytes32 payloadHash = keccak256(payload);
+        bytes32 payloadHash;
+        assembly {
+            payloadHash := keccak256(payload.offset, payload.length)
+        }
         if (!gateway.validateContractCall(commandId, sourceChain, sourceAddress, payloadHash)) {
             revert NotApprovedByGateway();
         }

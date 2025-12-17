@@ -12,7 +12,7 @@ interface IYieldRouter {
 contract DeployCompoundAdapters is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address deployer = vm.addr(deployerPrivateKey);
+        // address deployer = vm.addr(deployerPrivateKey);
         vm.startBroadcast(deployerPrivateKey);
 
         address yieldRouter = 0xFD5d839EF67bb50a3395f2974419274B47D7cb90;
@@ -23,19 +23,19 @@ contract DeployCompoundAdapters is Script {
         address usdtComet = 0xC88C22A769FB69fD6Ed690E927f3F1CCCaDF9180;
 
         // Deploy New Adapters
-        CompoundAdapter adapterIDRX = new CompoundAdapter(idrxComet);
-        console.log("New CompoundAdapter IDRX:", address(adapterIDRX));
+        CompoundAdapter adapterIdrx = new CompoundAdapter(idrxComet);
+        console.log("New CompoundAdapter IDRX:", address(adapterIdrx));
 
-        CompoundAdapter adapterUSDC = new CompoundAdapter(usdcComet);
-        console.log("New CompoundAdapter USDC:", address(adapterUSDC));
+        CompoundAdapter adapterUsdc = new CompoundAdapter(usdcComet);
+        console.log("New CompoundAdapter USDC:", address(adapterUsdc));
 
-        CompoundAdapter adapterUSDT = new CompoundAdapter(usdtComet);
-        console.log("New CompoundAdapter USDT:", address(adapterUSDT));
+        CompoundAdapter adapterUsdt = new CompoundAdapter(usdtComet);
+        console.log("New CompoundAdapter USDT:", address(adapterUsdt));
 
         // Whitelist New Adapters
-        IYieldRouter(yieldRouter).setAdapterWhitelist(address(adapterIDRX), true);
-        IYieldRouter(yieldRouter).setAdapterWhitelist(address(adapterUSDC), true);
-        IYieldRouter(yieldRouter).setAdapterWhitelist(address(adapterUSDT), true);
+        IYieldRouter(yieldRouter).setAdapterWhitelist(address(adapterIdrx), true);
+        IYieldRouter(yieldRouter).setAdapterWhitelist(address(adapterUsdc), true);
+        IYieldRouter(yieldRouter).setAdapterWhitelist(address(adapterUsdt), true);
 
         // Optional: Blacklist Old Adapters?
         // Old addresses:

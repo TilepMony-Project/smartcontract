@@ -3,7 +3,6 @@ pragma solidity ^0.8.19;
 
 import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
-import {MockERC20} from "../src/yield/mocks/MockERC20.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
 interface MockIDRX {
@@ -41,13 +40,13 @@ contract YieldLiquidityInjector is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         // Tokens (Mantle Sepolia)
-        address IDRX = 0xc39DfE81DcAd49F1Da4Ff8d41f723922Febb75dc;
-        address USDC = 0x681db03Ef13e37151e9fd68920d2c34273194379;
-        address USDT = 0x9a82fC0c460A499b6ce3d6d8A29835a438B5Ec28;
+        address idrx = 0xc39DfE81DcAd49F1Da4Ff8d41f723922Febb75dc;
+        address usdc = 0x681db03Ef13e37151e9fd68920d2c34273194379;
+        address usdt = 0x9a82fC0c460A499b6ce3d6d8A29835a438B5Ec28;
 
         // Amounts
-        uint256 amountIDRX = 1_000_000_000 * 1e6;
-        uint256 amountUSD = 1_000_000 * 1e6;
+        uint256 amountIdrx = 1_000_000_000 * 1e6;
+        uint256 amountUsd = 1_000_000 * 1e6;
 
         // Common Rate
         uint256 newRate = 1.1 * 1e18; // 1.1e18
@@ -55,19 +54,37 @@ contract YieldLiquidityInjector is Script {
         Config[] memory configs = new Config[](9);
 
         // MethLab
-        configs[0] = Config("MethLab IDRX", 0xBe97818D0B6577410b7282F9306Ea9ed8967d56a, IDRX, amountIDRX);
-        configs[1] = Config("MethLab USDC", 0xDE28623E3A209062479C4CD3240eD14819309D66, USDC, amountUSD);
-        configs[2] = Config("MethLab USDT", 0x30f42E2f1931324aBC0ee9975FF63C552ab50ab7, USDT, amountUSD);
+        configs[0] = Config({
+            name: "MethLab IDRX", vault: 0xBe97818D0B6577410b7282F9306Ea9ed8967d56a, token: idrx, amount: amountIdrx
+        });
+        configs[1] = Config({
+            name: "MethLab USDC", vault: 0xDE28623E3A209062479C4CD3240eD14819309D66, token: usdc, amount: amountUsd
+        });
+        configs[2] = Config({
+            name: "MethLab USDT", vault: 0x30f42E2f1931324aBC0ee9975FF63C552ab50ab7, token: usdt, amount: amountUsd
+        });
 
         // Init Capital (MockLendingPool)
-        configs[3] = Config("InitCapital IDRX", 0x6Adaa6312b785fcbf4904BA505Ecff4f3fe2b4e2, IDRX, amountIDRX);
-        configs[4] = Config("InitCapital USDC", 0x2e01d3672be5978a0CcEada25097325f255F76e8, USDC, amountUSD);
-        configs[5] = Config("InitCapital USDT", 0x99a13d0D22025EbeE7958BE133022Aa17E63a821, USDT, amountUSD);
+        configs[3] = Config({
+            name: "InitCapital IDRX", vault: 0x6Adaa6312b785fcbf4904BA505Ecff4f3fe2b4e2, token: idrx, amount: amountIdrx
+        });
+        configs[4] = Config({
+            name: "InitCapital USDC", vault: 0x2e01d3672be5978a0CcEada25097325f255F76e8, token: usdc, amount: amountUsd
+        });
+        configs[5] = Config({
+            name: "InitCapital USDT", vault: 0x99a13d0D22025EbeE7958BE133022Aa17E63a821, token: usdt, amount: amountUsd
+        });
 
         // Compound (MockComet)
-        configs[6] = Config("Compound IDRX", 0xAaeBE3d3A7DFcC4c2C334E007dc4339d7669a411, IDRX, amountIDRX);
-        configs[7] = Config("Compound USDC", 0x375b705311059aadaC34fe4BEa3C569adc4dcA8D, USDC, amountUSD);
-        configs[8] = Config("Compound USDT", 0xC88C22A769FB69fD6Ed690E927f3F1CCCaDF9180, USDT, amountUSD);
+        configs[6] = Config({
+            name: "Compound IDRX", vault: 0xAaeBE3d3A7DFcC4c2C334E007dc4339d7669a411, token: idrx, amount: amountIdrx
+        });
+        configs[7] = Config({
+            name: "Compound USDC", vault: 0x375b705311059aadaC34fe4BEa3C569adc4dcA8D, token: usdc, amount: amountUsd
+        });
+        configs[8] = Config({
+            name: "Compound USDT", vault: 0xC88C22A769FB69fD6Ed690E927f3F1CCCaDF9180, token: usdt, amount: amountUsd
+        });
 
         for (uint256 i = 0; i < configs.length; i++) {
             Config memory c = configs[i];
@@ -99,7 +116,7 @@ contract YieldLiquidityInjector is Script {
                 // MethLab/Init/Comet mocks usually have mint(to, amount) or similar.
                 // Let's try to call mint(deployer, amount) on the vault.
                 // Initial amount for shares.
-                uint256 shareAmount = (c.amount * 1e18) / newRate; // Approx calculation
+                // uint256 shareAmount = (c.amount * 1e18) / newRate; // Approx calculation
                 // Use a smaller fixed amount for testing to avoid hitting limits
                 uint256 testShareAmount = 1000 * 1e6;
                 if (i >= 3 && i <= 5) {

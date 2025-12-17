@@ -6,8 +6,11 @@ import {MockERC20} from "../MockERC20.sol";
 
 import {IERC20Metadata} from "openzeppelin-contracts/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract MockLendingPool is ILendingPool, MockERC20 {
+    using SafeERC20 for IERC20;
+
     address public override underlyingToken;
     uint256 public supplyRate;
     uint256 public exchangeRate = 1e18; // Default 1:1
@@ -31,6 +34,6 @@ contract MockLendingPool is ILendingPool, MockERC20 {
     }
 
     function transferUnderlyingTo(address to, uint256 amount) external {
-        IERC20(underlyingToken).transfer(to, amount);
+        IERC20(underlyingToken).safeTransfer(to, amount);
     }
 }

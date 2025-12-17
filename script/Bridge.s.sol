@@ -10,6 +10,10 @@ import {AxelarBridgeAdapter} from "../src/bridge/adapters/AxelarBridgeAdapter.so
 contract BridgeScript is Script {
     using stdJson for string;
 
+    bytes32 internal constant ROUTER_SALT = keccak256("AxelarBridgeRouter_V1");
+    bytes32 internal constant ADAPTER_SALT = keccak256("AxelarBridgeAdapter_V1");
+    address internal constant CREATE2_FACTORY_ADDR = 0x4e59b44847b379578588920cA78FbF26c0B4956C;
+
     struct TokenHint {
         string label;
         string envSuffix;
@@ -27,17 +31,12 @@ contract BridgeScript is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address deployer = vm.addr(deployerPrivateKey);
         (string memory prefix,) = _readChainPrefix();
-
-        address owner = _readAddressOr(string.concat(prefix, "_BRIDGE_OWNER"), deployer);
+        address owner = deployer;
 
         vm.startBroadcast(deployerPrivateKey);
 
-        AxelarBridgeRouter router = new AxelarBridgeRouter(owner);
-        console.log("AxelarBridgeRouter deployed at:", address(router));
-        console.log("Router owner:", owner);
-
-        AxelarBridgeAdapter adapter = new AxelarBridgeAdapter(address(router));
-        console.log("AxelarBridgeAdapter deployed at:", address(adapter));
+        AxelarBridgeRouter router = _deployRouter(owner);
+        AxelarBridgeAdapter adapter = _deployAdapter(address(router));
 
         _configureSupportedTokens(router, prefix);
 

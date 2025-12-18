@@ -1,19 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import {Test} from "forge-std/Test.sol";
 import {FusionXAdapter} from "../../../src/swap/adapters/FusionXAdapter.sol";
 import {FusionXRouter} from "../../../src/swap/routers/FusionXRouter.sol";
-import {MockIDRX} from "../../../src/token/MockIDRX.sol";
-import {MockUSDT} from "../../../src/token/MockUSDT.sol";
+import {TokenHypERC20} from "../../../src/token/TokenHypERC20.sol";
+import {TokenHypTestBase} from "../../mocks/TokenHypTestBase.sol";
 
-contract FusionXAdapterTest is Test {
+contract FusionXAdapterTest is TokenHypTestBase {
     address constant AGGREGATOR = address(0xAA);
     address constant RECEIVER = address(0xBB);
     address constant DEPLOYER = address(0x1);
 
-    MockIDRX tokenA;
-    MockUSDT tokenB;
+    TokenHypERC20 tokenA;
+    TokenHypERC20 tokenB;
     FusionXRouter router;
     FusionXAdapter adapter;
 
@@ -25,14 +24,15 @@ contract FusionXAdapterTest is Test {
 
     function setUp() public {
         vm.startPrank(DEPLOYER);
-        tokenA = new MockIDRX();
-        tokenB = new MockUSDT();
+        tokenA = _deployToken("Mock IDRX", "MocIDRX");
+        tokenB = _deployToken("Mock USDT", "MocUSDT");
         router = new FusionXRouter();
         adapter = new FusionXAdapter(address(router));
         router.setRate(address(tokenA), address(tokenB), EXCHANGE_RATE);
-        tokenA.mint(AGGREGATOR, AMOUNT_IN);
-        tokenB.mint(address(router), EXPECTED_OUT);
         vm.stopPrank();
+
+        _mintTo(tokenA, AGGREGATOR, AMOUNT_IN);
+        _mintTo(tokenB, address(router), EXPECTED_OUT);
 
         vm.prank(AGGREGATOR);
         tokenA.approve(address(adapter), AMOUNT_IN);

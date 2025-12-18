@@ -1,18 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import {Test} from "forge-std/Test.sol";
 import {MerchantMoeRouter} from "../../../src/swap/routers/MerchantMoeRouter.sol";
-import {MockIDRX} from "../../../src/token/MockIDRX.sol";
-import {MockUSDT} from "../../../src/token/MockUSDT.sol";
+import {TokenHypERC20} from "../../../src/token/TokenHypERC20.sol";
+import {TokenHypTestBase} from "../../mocks/TokenHypTestBase.sol";
 
-contract MerchantMoeRouterTest is Test {
+contract MerchantMoeRouterTest is TokenHypTestBase {
     address constant ADAPTER = address(0xAA);
     address constant RECEIVER = address(0xBB);
     address constant DEPLOYER = address(0x1);
 
-    MockIDRX tokenA;
-    MockUSDT tokenB;
+    TokenHypERC20 tokenA;
+    TokenHypERC20 tokenB;
     MerchantMoeRouter router;
 
     uint256 constant AMOUNT_IN = 100 * 10 ** 6; // 100 tokens
@@ -23,13 +22,14 @@ contract MerchantMoeRouterTest is Test {
 
     function setUp() public {
         vm.startPrank(DEPLOYER);
-        tokenA = new MockIDRX();
-        tokenB = new MockUSDT();
+        tokenA = _deployToken("Mock IDRX", "MocIDRX");
+        tokenB = _deployToken("Mock USDT", "MocUSDT");
         router = new MerchantMoeRouter();
         router.setRate(address(tokenA), address(tokenB), EXCHANGE_RATE);
-        tokenA.mint(ADAPTER, AMOUNT_IN);
-        tokenB.mint(address(router), EXPECTED_OUT);
         vm.stopPrank();
+
+        _mintTo(tokenA, ADAPTER, AMOUNT_IN);
+        _mintTo(tokenB, address(router), EXPECTED_OUT);
 
         vm.prank(ADAPTER);
         tokenA.approve(address(router), AMOUNT_IN);

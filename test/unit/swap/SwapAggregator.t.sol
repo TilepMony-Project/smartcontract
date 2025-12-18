@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import {Test} from "forge-std/Test.sol";
 import {ISwapRouter} from "../../../src/swap/interfaces/ISwapRouter.sol";
 import {ISwapAdapter} from "../../../src/swap/interfaces/ISwapAdapter.sol";
 import {FusionXRouter} from "../../../src/swap/routers/FusionXRouter.sol";
@@ -11,16 +10,16 @@ import {FusionXAdapter} from "../../../src/swap/adapters/FusionXAdapter.sol";
 import {MerchantMoeAdapter} from "../../../src/swap/adapters/MerchantMoeAdapter.sol";
 import {VertexAdapter} from "../../../src/swap/adapters/VertexAdapter.sol";
 import {SwapAggregator} from "../../../src/swap/SwapAggregator.sol";
-import {MockIDRX} from "../../../src/token/MockIDRX.sol";
-import {MockUSDT} from "../../../src/token/MockUSDT.sol";
+import {TokenHypERC20} from "../../../src/token/TokenHypERC20.sol";
+import {TokenHypTestBase} from "../../mocks/TokenHypTestBase.sol";
 
-contract SwapAggregatorTest is Test {
+contract SwapAggregatorTest is TokenHypTestBase {
     address constant SENDER = address(0xAA);
     address constant RECEIVER = address(0xBB);
     address constant DEPLOYER = address(0x1);
 
-    MockIDRX tokenA;
-    MockUSDT tokenB;
+    TokenHypERC20 tokenA;
+    TokenHypERC20 tokenB;
     ISwapRouter router;
     ISwapAdapter adapter;
     SwapAggregator aggregator;
@@ -32,8 +31,8 @@ contract SwapAggregatorTest is Test {
     uint256 constant EXPECTED_OUT = AMOUNT_IN * EXCHANGE_RATE / RATE_DECIMAL;
 
     function setUp() public {
-        tokenA = new MockIDRX();
-        tokenB = new MockUSDT();
+        tokenA = _deployToken("Mock IDRX", "MocIDRX");
+        tokenB = _deployToken("Mock USDT", "MocUSDT");
         vm.prank(DEPLOYER);
         aggregator = new SwapAggregator();
     }
@@ -46,10 +45,11 @@ contract SwapAggregatorTest is Test {
 
         router.setRate(address(tokenA), address(tokenB), EXCHANGE_RATE);
         aggregator.addTrustedAdapter(address(adapter));
-        tokenA.mint(SENDER, 1000 * 10 ** 6);
-        tokenB.mint(address(router), 1000000 * 10 ** 6);
 
         vm.stopPrank();
+
+        _mintTo(tokenA, SENDER, 1000 * 10 ** 6);
+        _mintTo(tokenB, address(router), 1000000 * 10 ** 6);
     }
 
     function setUpMerchantMoe() internal {
@@ -60,10 +60,11 @@ contract SwapAggregatorTest is Test {
 
         router.setRate(address(tokenA), address(tokenB), EXCHANGE_RATE);
         aggregator.addTrustedAdapter(address(adapter));
-        tokenA.mint(SENDER, 1000 * 10 ** 6);
-        tokenB.mint(address(router), 1000000 * 10 ** 6);
 
         vm.stopPrank();
+
+        _mintTo(tokenA, SENDER, 1000 * 10 ** 6);
+        _mintTo(tokenB, address(router), 1000000 * 10 ** 6);
     }
 
     function setUpVertex() internal {
@@ -74,10 +75,11 @@ contract SwapAggregatorTest is Test {
 
         router.setRate(address(tokenA), address(tokenB), EXCHANGE_RATE);
         aggregator.addTrustedAdapter(address(adapter));
-        tokenA.mint(SENDER, 1000 * 10 ** 6);
-        tokenB.mint(address(router), 1000000 * 10 ** 6);
 
         vm.stopPrank();
+
+        _mintTo(tokenA, SENDER, 1000 * 10 ** 6);
+        _mintTo(tokenB, address(router), 1000000 * 10 ** 6);
     }
 
     function test_SuccesfulSwapThroughAggregator_FusionX() public {

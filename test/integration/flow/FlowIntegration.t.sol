@@ -7,11 +7,11 @@ import {IMainController} from "../../../src/interfaces/IMainController.sol";
 import {SwapAggregator} from "../../../src/swap/SwapAggregator.sol";
 import {YieldRouter} from "../../../src/yield/YieldRouter.sol";
 import {TokenHypERC20} from "../../../src/token/TokenHypERC20.sol";
-import {TokenHypERC20} from "../../../src/token/TokenHypERC20.sol";
 import {FusionXRouter} from "../../../src/swap/routers/FusionXRouter.sol";
 import {FusionXAdapter} from "../../../src/swap/adapters/FusionXAdapter.sol";
 import {MockComet} from "../../../src/yield/mocks/MockComet.sol";
 import {CompoundAdapter} from "../../../src/yield/adapters/CompoundAdapter.sol";
+import {MockMailbox, MockInterchainGasPaymaster, MockInterchainSecurityModule} from "../../../src/mocks/HyperlaneStubs.sol";
 
 import {InitCapitalAdapter} from "../../../src/yield/adapters/InitCapitalAdapter.sol";
 import {MockInitCore} from "../../../src/yield/mocks/initCore/MockInitCore.sol";
@@ -38,12 +38,20 @@ contract FlowIntegrationTest is Test {
     address user = address(0x123);
     address user2 = address(0x456);
 
+    MockMailbox mailbox;
+    MockInterchainGasPaymaster igp;
+    MockInterchainSecurityModule ism;
+
     function setUp() public {
         vm.startPrank(user);
 
+        mailbox = new MockMailbox(1);
+        igp = new MockInterchainGasPaymaster();
+        ism = new MockInterchainSecurityModule();
+
         // 1. Deploy Tokens
-        usdt = new TokenHypERC20();
-        idrx = new TokenHypERC20();
+        usdt = _deployToken("Mock USDT", "mUSDT");
+        idrx = _deployToken("Mock IDRX", "mIDRX");
 
         // 2. Deploy Aggregators
         swapAggregator = new SwapAggregator();
@@ -83,6 +91,20 @@ contract FlowIntegrationTest is Test {
         require(success, "Transfer failed");
 
         vm.stopPrank();
+    }
+
+    function _deployToken(string memory name, string memory symbol) internal returns (TokenHypERC20) {
+        return new TokenHypERC20(
+            address(mailbox),
+            6,
+            name,
+            symbol,
+            address(igp),
+            address(ism),
+            user,
+            0,
+            address(this)
+        );
     }
 
     function test_Flow_Mint_Swap_Transfer() public {

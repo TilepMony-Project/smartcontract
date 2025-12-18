@@ -228,7 +228,7 @@ flowchart LR
 ```bash
 export TOKEN_PROFILE=MIDRX
 export MAILBOX=$BASE_MAILBOX
-dotenv -f .env.token forge script script/token/DeployTokenHypERC20.s.sol:DeployTokenHypERC20 \
+forge script script/token/DeployTokenHypERC20.s.sol:DeployTokenHypERC20 \
   --rpc-url $BASE_SEPOLIA_RPC_URL \
   --broadcast \
   --verify \
@@ -237,7 +237,7 @@ dotenv -f .env.token forge script script/token/DeployTokenHypERC20.s.sol:DeployT
 
 Need a mock executor first?
 ```bash
-dotenv -f .env.token forge script script/token/DeployTokenHypERC20.s.sol:deployMockWorkflowExecutor \
+forge script script/token/DeployTokenHypERC20.s.sol:deployMockWorkflowExecutor \
   --rpc-url $BASE_SEPOLIA_RPC_URL \
   --broadcast \
   -vvv
@@ -257,7 +257,7 @@ export RECIPIENT=0xYourWallet
 export AMOUNT=100000000000000000000   # 100 tokens
 export GAS_PAYMENT=0
 
-dotenv -f .env.token forge script script/token/BridgeExampleWorkflow.s.sol:BridgeExampleWorkflow \
+forge script script/token/BridgeExampleWorkflow.s.sol:BridgeExampleWorkflow \
   --rpc-url $BASE_SEPOLIA_RPC_URL \
   --broadcast \
   -vvv
@@ -269,14 +269,14 @@ dotenv -f .env.token forge script script/token/BridgeExampleWorkflow.s.sol:Bridg
 export TOKEN_PROFILE=MIDRX
 export TOKEN_ADDRESS=$TOKEN_ADDRESS_BASE_MIDRX
 export NEW_WORKFLOW_EXECUTOR=0xNewExecutor
-dotenv -f .env.token forge script script/token/DeployTokenHypERC20.s.sol:updateWorkflowExecutor \
+forge script script/token/DeployTokenHypERC20.s.sol:updateWorkflowExecutor \
   --rpc-url $BASE_SEPOLIA_RPC_URL \
   --broadcast \
   -vvv
 
 # check executor
 export TOKEN_PROFILE=MIDRX
-dotenv -f .env.token forge script script/token/DeployTokenHypERC20.s.sol:checkWorkflowExecutor \
+script script/token/DeployTokenHypERC20.s.sol:checkWorkflowExecutor \
   --rpc-url $BASE_SEPOLIA_RPC_URL \
   -vvv
 ```
@@ -300,10 +300,10 @@ struct WorkflowData {
 ## Testing
 ```bash
 # focus on TokenHypERC20
-dotenv -f .env.token forge test --match-contract TokenHypERC20Test -vvv
+forge test --match-contract TokenHypERC20Test -vvv
 
 # run entire suite
-dotenv -f .env.token forge test -vvv
+forge test -vvv
 ```
 
 ---

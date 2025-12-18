@@ -20,11 +20,7 @@ contract MockMailbox is IMailbox {
         return IInterchainSecurityModule(address(0));
     }
 
-    function dispatch(
-        uint32,
-        bytes32,
-        bytes calldata
-    ) external pure override returns (bytes32) {
+    function dispatch(uint32, bytes32, bytes calldata) external pure override returns (bytes32) {
         return bytes32(0);
     }
 
@@ -47,25 +43,20 @@ contract MockMailbox is IMailbox {
     }
 }
 
-contract MockInterchainGasPaymaster is IInterchainGasPaymaster {
-    function payForGas(
-        bytes32,
-        uint32,
-        uint256,
-        address
-    ) external payable override {}
+    contract MockInterchainGasPaymaster is IInterchainGasPaymaster {
+        function payForGas(bytes32, uint32, uint256, address) external payable override {}
 
-    function quoteGasPayment(uint32, uint256) external pure override returns (uint256) {
-        return 0;
-    }
-}
-
-contract MockInterchainSecurityModule is IInterchainSecurityModule {
-    function moduleType() external pure override returns (uint8) {
-        return uint8(Types.NULL);
+        function quoteGasPayment(uint32, uint256) external pure override returns (uint256) {
+            return 0;
+        }
     }
 
-    function verify(bytes calldata, bytes calldata) external pure override returns (bool) {
-        return true;
+    contract MockInterchainSecurityModule is IInterchainSecurityModule {
+        function moduleType() external pure override returns (uint8) {
+            return uint8(Types.NULL);
+        }
+
+        function verify(bytes calldata, bytes calldata) external pure override returns (bool) {
+            return true;
+        }
     }
-}

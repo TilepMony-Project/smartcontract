@@ -26,12 +26,7 @@ contract BridgeExampleWorkflow is TokenProfileScript {
 
         // Workflow configuration
         bool useWorkflow = vm.envOr("USE_WORKFLOW", false);
-        address workflowExecutor = _profileAddress(
-            profile,
-            "WORKFLOW_EXECUTOR",
-            "WORKFLOW_EXECUTOR",
-            address(0)
-        );
+        address workflowExecutor = _profileAddress(profile, "WORKFLOW_EXECUTOR", "WORKFLOW_EXECUTOR", address(0));
 
         bytes memory additionalData;
         if (useWorkflow && workflowExecutor != address(0)) {
@@ -81,11 +76,7 @@ contract BridgeExampleWorkflow is TokenProfileScript {
         return abi.encodePacked(workflowId, abi.encode(workflowData));
     }
 
-    function _getWorkflowActions(address workflowExecutor)
-        internal
-        view
-        returns (TokenHypERC20.Action[] memory)
-    {
+    function _getWorkflowActions(address workflowExecutor) internal view returns (TokenHypERC20.Action[] memory) {
         // Hardcoded actions payload as requested
         // Action 0: Type 4, Target 0xdAC1B27D40E0971a55D5478e47aDaF2D5E5E8A77
         // Action 1: Type 0, Target 0xed47849Eb9548F164234287964356eF9A6f73075

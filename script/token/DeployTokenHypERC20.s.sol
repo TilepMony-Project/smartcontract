@@ -53,10 +53,9 @@ contract DeployTokenHypERC20 is TokenProfileScript {
 
     struct TokenConfig {
         uint8 decimals;
-        uint256 scale;
         string name;
         string symbol;
-        address hook;
+        address interchainGasPaymaster;
         address ism;
         uint256 initialSupply;
     }
@@ -71,10 +70,9 @@ contract DeployTokenHypERC20 is TokenProfileScript {
             abi.encode(
                 mailbox,
                 cfg.decimals,
-                cfg.scale,
                 cfg.name,
                 cfg.symbol,
-                cfg.hook,
+                cfg.interchainGasPaymaster,
                 cfg.ism,
                 owner_,
                 cfg.initialSupply,
@@ -98,20 +96,14 @@ contract DeployTokenHypERC20 is TokenProfileScript {
         bytes32 salt = keccak256(bytes(saltString));
         address mailbox = vm.envAddress("MAILBOX");
 
-        address workflowExecutor = _profileAddress(
-            profile,
-            "WORKFLOW_EXECUTOR",
-            "WORKFLOW_EXECUTOR",
-            address(0)
-        );
+        address workflowExecutor = _profileAddress(profile, "WORKFLOW_EXECUTOR", "WORKFLOW_EXECUTOR", address(0));
 
         // Token configuration
         TokenConfig memory cfg = TokenConfig({
             decimals: uint8(_profileUint(profile, "DECIMALS", "TOKEN_DECIMALS", 18)),
-            scale: _profileUint(profile, "SCALE", "TOKEN_SCALE", 1 ether),
             name: _profileString(profile, "NAME", "TOKEN_NAME", "Workflow Token"),
             symbol: _profileString(profile, "SYMBOL", "TOKEN_SYMBOL", "WFT"),
-            hook: _profileAddress(profile, "HOOK", "HOOK", address(0)),
+            interchainGasPaymaster: _interchainGasPaymasterFor(profile),
             ism: _profileAddress(profile, "ISM", "ISM", address(0)),
             initialSupply: _profileUint(profile, "TOTAL_SUPPLY", "TOTAL_SUPPLY", 1_000_000 ether)
         });
@@ -214,5 +206,14 @@ contract DeployTokenHypERC20 is TokenProfileScript {
 
         string memory executorEnvKey = _profileKey(profile, "WORKFLOW_EXECUTOR");
         console2.log(executorEnvKey, workflowExecutor);
+    }
+
+    function _interchainGasPaymasterFor(string memory profile) internal view returns (address) {
+        address igp = _profileAddress(profile, "IGP", "INTERCHAIN_GAS_PAYMASTER", address(0));
+        if (igp != address(0)) {
+            return igp;
+        }
+        // Backward compatibility: fall back to HOOK env vars if IGP is missing.
+        return _profileAddress(profile, "HOOK", "HOOK", address(0));
     }
 }

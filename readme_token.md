@@ -84,7 +84,7 @@ All deployments use `script/token/DeployTokenHypERC20.s.sol:DeployTokenHypERC20`
 ```bash
 export TOKEN_PROFILE=MIDRX          # or MUSDC / MUSDT
 export MAILBOX=$BASE_MAILBOX        # Base mailbox address
-dotenv -f .env.token forge script script/token/DeployTokenHypERC20.s.sol:DeployTokenHypERC20 \
+forge script script/token/DeployTokenHypERC20.s.sol:DeployTokenHypERC20 \
   --rpc-url $BASE_SEPOLIA_RPC_URL \
   --broadcast \
   --verify \
@@ -96,7 +96,7 @@ dotenv -f .env.token forge script script/token/DeployTokenHypERC20.s.sol:DeployT
 ```bash
 export TOKEN_PROFILE=MIDRX          # or MUSDC / MUSDT
 export MAILBOX=$MANTLE_MAILBOX      # Mantle mailbox address
-dotenv -f .env.token forge script script/token/DeployTokenHypERC20.s.sol:DeployTokenHypERC20 \
+forge script script/token/DeployTokenHypERC20.s.sol:DeployTokenHypERC20 \
   --rpc-url $MANTLE_SEPOLIA_RPC_URL \
   --broadcast \
   --verify \
@@ -123,11 +123,10 @@ Hyperlane routers must enroll their remote peers. Run the script once per chain 
    ```
 2. Execute the script against each RPC:
    ```bash
-   export TOKEN_PROFILE=MUSDC
-   dotenv -f .env.token bash -c '
+   export TOKEN_PROFILE=MIDRX
    for RPC in $BASE_SEPOLIA_RPC_URL $MANTLE_SEPOLIA_RPC_URL; do
      forge script script/token/EnrollRouters.s.sol:EnrollRouters --rpc-url $RPC --broadcast -vvv
-   done'
+   done
    ```
 
 ---
@@ -142,7 +141,7 @@ export AMOUNT=1000000000000000000     # 1 token (18 decimals)
 export GAS_PAYMENT=10000000000000000  # 0.01 native token (wei)
 export ADDITIONAL_DATA=0x             # optional payload
 
-dotenv -f .env.token forge script script/token/BridgeExample.s.sol:BridgeExample \
+forge script script/token/BridgeExampleWorkflow.s.sol:BridgeExampleWorkflow \
   --rpc-url $BASE_SEPOLIA_RPC_URL \
   --broadcast \
   -vvv
@@ -207,6 +206,22 @@ Origin Chain                     Destination Chain
      |                                 |     |- mint tokens
      |                                 |     \- _tryExecuteWorkflow()
      |                                 |           \- external executor
+```
+
+Mermaid overview:
+
+```mermaid
+flowchart LR
+    subgraph Origin["Origin Chain"]
+        A[transferRemoteWithPayload] --> B[Hyperlane Mailbox]
+    end
+    subgraph Destination["Destination Chain"]
+        C[Mailbox delivers message] --> D[_handle mints tokens]
+        D --> E[_tryExecuteWorkflow]
+        E -->|workflow metadata| F[Workflow Executor]
+    end
+    B -- messageId --> C
+    F -->|emit events| G[WorkflowExecuted & WorkflowCallResult]
 ```
 
 ### Deploy workflow token

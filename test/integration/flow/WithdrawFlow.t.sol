@@ -11,7 +11,11 @@ import {FusionXRouter} from "../../../src/swap/routers/FusionXRouter.sol";
 import {FusionXAdapter} from "../../../src/swap/adapters/FusionXAdapter.sol";
 import {MockComet} from "../../../src/yield/mocks/MockComet.sol";
 import {CompoundAdapter} from "../../../src/yield/adapters/CompoundAdapter.sol";
-import {MockMailbox, MockInterchainGasPaymaster, MockInterchainSecurityModule} from "../../../test/mocks/HyperlaneStubs.sol";
+import {
+    MockMailbox,
+    MockInterchainGasPaymaster,
+    MockInterchainSecurityModule
+} from "../../../test/mocks/HyperlaneStubs.sol";
 
 contract WithdrawFlowIntegrationTest is Test {
     MainController controller;
@@ -72,17 +76,7 @@ contract WithdrawFlowIntegrationTest is Test {
     }
 
     function _deployToken(string memory name, string memory symbol) internal returns (TokenHypERC20) {
-        return new TokenHypERC20(
-            address(mailbox),
-            6,
-            name,
-            symbol,
-            address(igp),
-            address(ism),
-            user,
-            0,
-            address(this)
-        );
+        return new TokenHypERC20(address(mailbox), 6, name, symbol, address(igp), address(ism), user, 0, address(this));
     }
 
     function test_Flow_Withdraw() public {

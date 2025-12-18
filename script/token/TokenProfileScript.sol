@@ -25,31 +25,25 @@ abstract contract TokenProfileScript is Script {
         return vm.envOr(_profileKey(profile, suffix), globalValue);
     }
 
-    function _profileUint(
-        string memory profile,
-        string memory suffix,
-        string memory globalKey,
-        uint256 defaultValue
-    ) internal view returns (uint256) {
+    function _profileUint(string memory profile, string memory suffix, string memory globalKey, uint256 defaultValue)
+        internal
+        view
+        returns (uint256)
+    {
         uint256 globalValue = vm.envOr(globalKey, defaultValue);
         return vm.envOr(_profileKey(profile, suffix), globalValue);
     }
 
-    function _profileAddress(
-        string memory profile,
-        string memory suffix,
-        string memory globalKey,
-        address defaultValue
-    ) internal view returns (address) {
-        address globalValue = vm.envOr(globalKey, defaultValue);
-        return vm.envOr(_profileKey(profile, suffix), globalValue);
-    }
-
-    function _profileAddressOrZero(string memory profile, string memory suffix)
+    function _profileAddress(string memory profile, string memory suffix, string memory globalKey, address defaultValue)
         internal
         view
         returns (address)
     {
+        address globalValue = vm.envOr(globalKey, defaultValue);
+        return vm.envOr(_profileKey(profile, suffix), globalValue);
+    }
+
+    function _profileAddressOrZero(string memory profile, string memory suffix) internal view returns (address) {
         string memory key = _profileKey(profile, suffix);
         return vm.envOr(key, address(0));
     }

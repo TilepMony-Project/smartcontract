@@ -65,12 +65,7 @@ contract MockMailbox is IMailbox {
 }
 
 contract MockInterchainGasPaymaster is IInterchainGasPaymaster {
-    function payForGas(
-        bytes32 _messageId,
-        uint32,
-        uint256 _gasAmount,
-        address
-    ) external payable {
+    function payForGas(bytes32 _messageId, uint32, uint256 _gasAmount, address) external payable {
         emit GasPayment(_messageId, _gasAmount, msg.value);
     }
 

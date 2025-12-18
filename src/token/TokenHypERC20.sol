@@ -54,15 +54,7 @@ contract TokenHypERC20 is HypERC20 {
         address _workflowExecutor
     ) HypERC20(decimals_) {
         workflowExecutor = _workflowExecutor;
-        _demoInit(
-            mailbox,
-            interchainGasPaymaster_,
-            interchainSecurityModule_,
-            owner_,
-            name_,
-            symbol_,
-            initialSupply_
-        );
+        _demoInit(mailbox, interchainGasPaymaster_, interchainSecurityModule_, owner_, name_, symbol_, initialSupply_);
     }
 
     function _demoInit(
@@ -74,22 +66,23 @@ contract TokenHypERC20 is HypERC20 {
         string memory symbol_,
         uint256 initialSupply_
     ) internal initializer {
-        __HyperlaneConnectionClient_initialize(
-            mailbox_,
-            interchainGasPaymaster_,
-            interchainSecurityModule_,
-            owner_
-        );
+        if (interchainGasPaymaster_ == address(0)) {
+            __HyperlaneConnectionClient_initialize(mailbox_);
+            if (interchainSecurityModule_ != address(0)) {
+                _setInterchainSecurityModule(interchainSecurityModule_);
+            }
+            _transferOwnership(owner_);
+        } else {
+            __HyperlaneConnectionClient_initialize(mailbox_, interchainGasPaymaster_, interchainSecurityModule_, owner_);
+        }
         __ERC20_init(name_, symbol_);
         _mint(owner_, initialSupply_);
     }
 
-    function _calculateFeesAndCharge(
-        uint32,
-        bytes32,
-        uint256 _amount,
-        uint256 nativeValue
-    ) internal returns (bytes memory, uint256) {
+    function _calculateFeesAndCharge(uint32, bytes32, uint256 _amount, uint256 nativeValue)
+        internal
+        returns (bytes memory, uint256)
+    {
         bytes memory metadata = _transferFromSender(_amount);
         return (metadata, nativeValue);
     }
@@ -105,16 +98,16 @@ contract TokenHypERC20 is HypERC20 {
         uint256 gasPayment,
         bytes memory outboundMessage
     ) internal returns (bytes32) {
-        bytes32 messageId = _dispatchWithGas(
-            _destination,
-            outboundMessage,
-            gasPayment,
-            msg.sender
-        );
+        bytes32 messageId;
+        if (address(interchainGasPaymaster) == address(0)) {
+            require(gasPayment == 0, "IGP not configured");
+            messageId = _dispatch(_destination, outboundMessage);
+        } else {
+            messageId = _dispatchWithGas(_destination, outboundMessage, gasPayment, msg.sender);
+        }
         emit SentTransferRemote(_destination, _recipient, _amount);
         return messageId;
     }
-
 
     /**
      * @notice Update workflow executor address
@@ -136,19 +129,12 @@ contract TokenHypERC20 is HypERC20 {
         uint256 _amount,
         bytes calldata _additionalData
     ) external payable returns (bytes32 messageId) {
-        (, uint256 remainingNativeValue) =
-            _calculateFeesAndCharge(_destination, _recipient, _amount, msg.value);
+        (, uint256 remainingNativeValue) = _calculateFeesAndCharge(_destination, _recipient, _amount, msg.value);
 
         uint256 scaledAmount = _outboundAmount(_amount);
         bytes memory outboundMessage = Message.format(_recipient, scaledAmount, _additionalData);
 
-        messageId = _emitAndDispatch(
-            _destination,
-            _recipient,
-            scaledAmount,
-            remainingNativeValue,
-            outboundMessage
-        );
+        messageId = _emitAndDispatch(_destination, _recipient, scaledAmount, remainingNativeValue, outboundMessage);
 
         if (_additionalData.length > 0) {
             emit AdditionalDataSent(messageId, _destination, _recipient, _additionalData);
@@ -195,9 +181,7 @@ contract TokenHypERC20 is HypERC20 {
 
         bytes calldata workflowDataBytes = _metadata[32:];
 
-        try this._executeWorkflowSafely(
-            workflowDataBytes, Message.recipient(_message), Message.amount(_message)
-        ) {
+        try this._executeWorkflowSafely(workflowDataBytes, Message.recipient(_message), Message.amount(_message)) {
         // Workflow executed successfully
         }
             catch {

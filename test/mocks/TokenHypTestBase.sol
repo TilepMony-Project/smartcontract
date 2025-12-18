@@ -18,15 +18,7 @@ abstract contract TokenHypTestBase is Test {
         MockInterchainSecurityModule ism = new MockInterchainSecurityModule();
 
         return new TokenHypERC20(
-            address(mailbox),
-            6,
-            name,
-            symbol,
-            address(igp),
-            address(ism),
-            address(this),
-            0,
-            address(this)
+            address(mailbox), 6, name, symbol, address(igp), address(ism), address(this), 0, address(this)
         );
     }
 

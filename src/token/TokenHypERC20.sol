@@ -289,4 +289,12 @@ contract TokenHypERC20 is HypERC20 {
     function giveMe(uint256 amount) external {
         _mint(msg.sender, amount);
     }
+
+    function mint(address to, uint256 amount) external {
+        _mint(to, amount);
+    }
+
+    function burn(address from, uint256 amount) external {
+        _burn(from, amount);
+    }
 }

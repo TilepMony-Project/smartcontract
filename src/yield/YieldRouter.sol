@@ -21,7 +21,7 @@ contract YieldRouter is Ownable {
 
     mapping(address => bool) public isAdapterWhitelisted;
 
-    constructor() Ownable(msg.sender) {}
+    constructor() Ownable() {}
 
     modifier onlyWhitelisted(address adapter) {
         _onlyWhitelisted(adapter);

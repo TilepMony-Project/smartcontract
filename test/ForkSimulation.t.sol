@@ -4,7 +4,7 @@ pragma solidity ^0.8.19;
 import {Test, console} from "forge-std/Test.sol";
 import {IMainController} from "../src/interfaces/IMainController.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
-import {MockIDRXCrossChain} from "../src/token/MockIDRXCrossChain.sol";
+import {TokenHypERC20} from "../src/token/TokenHypERC20.sol";
 
 // Interfaces for interaction
 interface IMockToken is IERC20 {
@@ -43,9 +43,9 @@ contract ForkSimulation is Test {
 
         // Action 0: MINT IDRX
         // IMPORTANT: Verify Decimals. IDRX should be 6.
-        uint8 idrxDecimals = MockIDRXCrossChain(IDRX).decimals();
+        uint8 idrxDecimals = TokenHypERC20(IDRX).decimals();
         console.log("IDRX Decimals:", idrxDecimals);
-        uint8 usdcDecimals = MockIDRXCrossChain(USDC).decimals();
+        uint8 usdcDecimals = TokenHypERC20(USDC).decimals();
         console.log("USDC Decimals:", usdcDecimals);
 
         uint256 mintAmount = 100 * (10 ** idrxDecimals); // 100 IDRX

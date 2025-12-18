@@ -2,7 +2,7 @@
 pragma solidity ^0.8.30;
 
 import {Script, console} from "forge-std/Script.sol";
-import {MockIDRXCrossChain} from "../src/token/MockIDRXCrossChain.sol";
+import {MockIDRXCrossChain} from "../src/token/TokenHypERC20.sol";
 import {FusionXAdapter} from "../src/swap/adapters/FusionXAdapter.sol";
 import {MerchantMoeAdapter} from "../src/swap/adapters/MerchantMoeAdapter.sol";
 import {VertexAdapter} from "../src/swap/adapters/VertexAdapter.sol";

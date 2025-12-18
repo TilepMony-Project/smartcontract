@@ -4,7 +4,7 @@ pragma solidity ^0.8.19;
 import {Test, console} from "forge-std/Test.sol";
 import {IMainController} from "../src/interfaces/IMainController.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
-import {MockIDRXCrossChain} from "../src/token/MockIDRXCrossChain.sol";
+import {MockIDRXCrossChain} from "../src/token/TokenHypERC20.sol";
 
 // Interfaces for interaction
 interface IMockToken is IERC20 {

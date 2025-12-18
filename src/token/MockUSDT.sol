@@ -7,7 +7,7 @@ import {Ownable} from "openzeppelin-contracts/contracts/access/Ownable.sol";
 /// @title MockUSDT
 /// @notice Simple mock USD-pegged stablecoin used for bridge demos.
 contract MockUSDT is ERC20, Ownable {
-    constructor() ERC20("Mock Tether USD", "MocUSDT") Ownable(msg.sender) {}
+    constructor() ERC20("Mock Tether USD", "MocUSDT") Ownable() {}
 
     function decimals() public view virtual override returns (uint8) {
         return 6;

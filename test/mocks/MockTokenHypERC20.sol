@@ -57,7 +57,7 @@ contract MockTokenHypERC20 is ERC20, Ownable {
 
     constructor(string memory name_, string memory symbol_, address _workflowExecutor)
         ERC20(name_, symbol_)
-        Ownable(msg.sender)
+        Ownable()
     {
         workflowExecutor = _workflowExecutor;
     }

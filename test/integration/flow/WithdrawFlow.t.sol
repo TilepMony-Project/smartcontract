@@ -6,8 +6,8 @@ import {MainController} from "../../../src/core/MainController.sol";
 import {IMainController} from "../../../src/interfaces/IMainController.sol";
 import {SwapAggregator} from "../../../src/swap/SwapAggregator.sol";
 import {YieldRouter} from "../../../src/yield/YieldRouter.sol";
-import {MockUSDTCrossChain} from "../../../src/token/TokenHypERC20.sol";
-import {MockIDRXCrossChain} from "../../../src/token/TokenHypERC20.sol";
+import {TokenHypERC20} from "../../../src/token/TokenHypERC20.sol";
+import {TokenHypERC20} from "../../../src/token/TokenHypERC20.sol";
 import {FusionXRouter} from "../../../src/swap/routers/FusionXRouter.sol";
 import {FusionXAdapter} from "../../../src/swap/adapters/FusionXAdapter.sol";
 import {MockComet} from "../../../src/yield/mocks/MockComet.sol";
@@ -18,8 +18,8 @@ contract WithdrawFlowIntegrationTest is Test {
     SwapAggregator swapAggregator;
     YieldRouter yieldRouter;
 
-    MockUSDTCrossChain usdt;
-    MockIDRXCrossChain idrx;
+    TokenHypERC20 usdt;
+    TokenHypERC20 idrx;
 
     FusionXRouter fusionXRouter;
     FusionXAdapter fusionXAdapter;
@@ -33,8 +33,8 @@ contract WithdrawFlowIntegrationTest is Test {
         vm.startPrank(user);
 
         // 1. Deploy Tokens
-        usdt = new MockUSDTCrossChain();
-        idrx = new MockIDRXCrossChain();
+        usdt = new TokenHypERC20();
+        idrx = new TokenHypERC20();
 
         // 2. Deploy Aggregators
         swapAggregator = new SwapAggregator();

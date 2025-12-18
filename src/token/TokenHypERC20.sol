@@ -3,7 +3,7 @@
 pragma solidity ^0.8.20;
 
 import {HypERC20} from "@hyperlane-xyz/core/token/HypERC20.sol";
-import {TokenMessage} from "@hyperlane-xyz/core/token/libs/TokenMessage.sol";
+import {Message} from "@hyperlane-xyz/core/token/libs/Message.sol";
 import {TypeCasts} from "@hyperlane-xyz/core/libs/TypeCasts.sol";
 
 /// @title TokenHypERC20
@@ -45,30 +45,74 @@ contract TokenHypERC20 is HypERC20 {
     constructor(
         address mailbox,
         uint8 decimals_,
-        uint256 scale_,
         string memory name_,
         string memory symbol_,
-        address hook_,
+        address interchainGasPaymaster_,
         address interchainSecurityModule_,
         address owner_,
         uint256 initialSupply_,
         address _workflowExecutor
-    ) HypERC20(decimals_, scale_, mailbox) {
+    ) HypERC20(decimals_) {
         workflowExecutor = _workflowExecutor;
-        _demoInit(name_, symbol_, hook_, interchainSecurityModule_, owner_, initialSupply_);
+        _demoInit(
+            mailbox,
+            interchainGasPaymaster_,
+            interchainSecurityModule_,
+            owner_,
+            name_,
+            symbol_,
+            initialSupply_
+        );
     }
 
     function _demoInit(
-        string memory name_,
-        string memory symbol_,
-        address hook_,
+        address mailbox_,
+        address interchainGasPaymaster_,
         address interchainSecurityModule_,
         address owner_,
+        string memory name_,
+        string memory symbol_,
         uint256 initialSupply_
     ) internal initializer {
+        __HyperlaneConnectionClient_initialize(
+            mailbox_,
+            interchainGasPaymaster_,
+            interchainSecurityModule_,
+            owner_
+        );
         __ERC20_init(name_, symbol_);
         _mint(owner_, initialSupply_);
-        _MailboxClient_initialize(hook_, interchainSecurityModule_, owner_);
+    }
+
+    function _calculateFeesAndCharge(
+        uint32,
+        bytes32,
+        uint256 _amount,
+        uint256 nativeValue
+    ) internal returns (bytes memory, uint256) {
+        bytes memory metadata = _transferFromSender(_amount);
+        return (metadata, nativeValue);
+    }
+
+    function _outboundAmount(uint256 _amount) internal pure returns (uint256) {
+        return _amount;
+    }
+
+    function _emitAndDispatch(
+        uint32 _destination,
+        bytes32 _recipient,
+        uint256 _amount,
+        uint256 gasPayment,
+        bytes memory outboundMessage
+    ) internal returns (bytes32) {
+        bytes32 messageId = _dispatchWithGas(
+            _destination,
+            outboundMessage,
+            gasPayment,
+            msg.sender
+        );
+        emit SentTransferRemote(_destination, _recipient, _amount);
+        return messageId;
     }
 
 
@@ -92,12 +136,19 @@ contract TokenHypERC20 is HypERC20 {
         uint256 _amount,
         bytes calldata _additionalData
     ) external payable returns (bytes32 messageId) {
-        (, uint256 remainingNativeValue) = _calculateFeesAndCharge(_destination, _recipient, _amount, msg.value);
+        (, uint256 remainingNativeValue) =
+            _calculateFeesAndCharge(_destination, _recipient, _amount, msg.value);
 
         uint256 scaledAmount = _outboundAmount(_amount);
-        bytes memory tokenMessage = TokenMessage.format(_recipient, scaledAmount, _additionalData);
+        bytes memory outboundMessage = Message.format(_recipient, scaledAmount, _additionalData);
 
-        messageId = _emitAndDispatch(_destination, _recipient, scaledAmount, remainingNativeValue, tokenMessage);
+        messageId = _emitAndDispatch(
+            _destination,
+            _recipient,
+            scaledAmount,
+            remainingNativeValue,
+            outboundMessage
+        );
 
         if (_additionalData.length > 0) {
             emit AdditionalDataSent(messageId, _destination, _recipient, _additionalData);
@@ -105,13 +156,13 @@ contract TokenHypERC20 is HypERC20 {
     }
 
     function _handle(uint32 _origin, bytes32 _sender, bytes calldata _message) internal override {
-        bytes calldata metadata = TokenMessage.metadata(_message);
+        bytes calldata metadata = Message.metadata(_message);
 
         // Mint tokens first (from parent HypERC20)
         super._handle(_origin, _sender, _message);
 
         if (metadata.length > 0) {
-            emit AdditionalDataReceived(_origin, TokenMessage.recipient(_message), metadata);
+            emit AdditionalDataReceived(_origin, Message.recipient(_message), metadata);
 
             // Try to execute workflow if metadata contains workflow data
             _tryExecuteWorkflow(_origin, _sender, _message, metadata);
@@ -145,7 +196,7 @@ contract TokenHypERC20 is HypERC20 {
         bytes calldata workflowDataBytes = _metadata[32:];
 
         try this._executeWorkflowSafely(
-            workflowDataBytes, TokenMessage.recipient(_message), TokenMessage.amount(_message)
+            workflowDataBytes, Message.recipient(_message), Message.amount(_message)
         ) {
         // Workflow executed successfully
         }

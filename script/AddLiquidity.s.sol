@@ -2,7 +2,7 @@
 pragma solidity ^0.8.30;
 
 import {Script, console} from "forge-std/Script.sol";
-import {MockIDRXCrossChain} from "../src/token/TokenHypERC20.sol";
+import {TokenHypERC20} from "../src/token/TokenHypERC20.sol";
 import {FusionXAdapter} from "../src/swap/adapters/FusionXAdapter.sol";
 import {MerchantMoeAdapter} from "../src/swap/adapters/MerchantMoeAdapter.sol";
 import {VertexAdapter} from "../src/swap/adapters/VertexAdapter.sol";
@@ -41,16 +41,16 @@ contract AddLiquidity is Script {
             console.log("Adding liquidity to", name, "Router:", router);
 
             // USDC
-            MockIDRXCrossChain(USDC).giveMe(1000000 * 1e6);
-            require(MockIDRXCrossChain(USDC).transfer(router, 1000000 * 1e6), "USDC Transfer failed");
+            TokenHypERC20(USDC).giveMe(1000000 * 1e6);
+            require(TokenHypERC20(USDC).transfer(router, 1000000 * 1e6), "USDC Transfer failed");
 
             // USDT
-            MockIDRXCrossChain(USDT).giveMe(1000000 * 1e6);
-            require(MockIDRXCrossChain(USDT).transfer(router, 1000000 * 1e6), "USDT Transfer failed");
+            TokenHypERC20(USDT).giveMe(1000000 * 1e6);
+            require(TokenHypERC20(USDT).transfer(router, 1000000 * 1e6), "USDT Transfer failed");
 
             // IDRX
-            MockIDRXCrossChain(IDRX).giveMe(10000000000 * 1e6);
-            require(MockIDRXCrossChain(IDRX).transfer(router, 10000000000 * 1e6), "IDRX Transfer failed");
+            TokenHypERC20(IDRX).giveMe(10000000000 * 1e6);
+            require(TokenHypERC20(IDRX).transfer(router, 10000000000 * 1e6), "IDRX Transfer failed");
         }
 
         console.log("Liquidity Added to ALL Routers!");

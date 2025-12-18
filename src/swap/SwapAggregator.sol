@@ -24,7 +24,7 @@ contract SwapAggregator is ISwapAggregator, Ownable {
      * @notice Constructor that sets the deployer as the contract owner.
      * @dev Initializes the contract by setting `msg.sender` as the initial owner, leveraging the `Ownable` contract.
      */
-    constructor() Ownable(msg.sender) {}
+    constructor() Ownable() {}
 
     // --- Admin Functions ---
 

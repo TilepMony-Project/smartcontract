@@ -11,7 +11,7 @@ import {FusionXRouter} from "../../../src/swap/routers/FusionXRouter.sol";
 import {FusionXAdapter} from "../../../src/swap/adapters/FusionXAdapter.sol";
 import {MockComet} from "../../../src/yield/mocks/MockComet.sol";
 import {CompoundAdapter} from "../../../src/yield/adapters/CompoundAdapter.sol";
-import {MockMailbox, MockInterchainGasPaymaster, MockInterchainSecurityModule} from "../../../src/mocks/HyperlaneStubs.sol";
+import {MockMailbox, MockInterchainGasPaymaster, MockInterchainSecurityModule} from "../../../test/mocks/HyperlaneStubs.sol";
 
 contract WithdrawFlowIntegrationTest is Test {
     MainController controller;

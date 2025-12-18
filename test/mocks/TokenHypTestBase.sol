@@ -7,7 +7,7 @@ import {
     MockMailbox,
     MockInterchainGasPaymaster,
     MockInterchainSecurityModule
-} from "../../src/mocks/HyperlaneStubs.sol";
+} from "../../test/mocks/HyperlaneStubs.sol";
 
 abstract contract TokenHypTestBase is Test {
     uint32 private _domainCounter = 1;

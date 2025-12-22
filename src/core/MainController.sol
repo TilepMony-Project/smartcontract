@@ -11,8 +11,6 @@ import {Ownable} from "openzeppelin-contracts/contracts/access/Ownable.sol";
 // Interfaces for interaction
 import {ISwapAggregator} from "../swap/interfaces/ISwapAggregator.sol";
 
-// YieldRouter doesn't have an interface file yet, so we import the contract or define a minimal interface here.
-// For cleaner code, let's define a minimal interface for YieldRouter interaction.
 interface IYieldRouter {
     function deposit(address adapter, address token, uint256 amount, bytes calldata data)
         external
@@ -21,6 +19,17 @@ interface IYieldRouter {
     function withdraw(address adapter, address shareToken, address token, uint256 amount, bytes calldata data)
         external
         returns (uint256);
+}
+
+// Interfaces for interaction
+interface IBridgeRouter {
+    function bridge(
+        address _tokenAddress,
+        uint32 _destination,
+        bytes32 _recipient,
+        uint256 _amount,
+        bytes calldata _additionalData
+    ) external payable;
 }
 
 interface IMintableToken {
@@ -190,6 +199,36 @@ contract MainController is IMainController, ReentrancyGuard, Ownable {
             emit ActionExecuted(index, action.actionType, action.targetContract, inputAmount, outputAmount);
             // Returns underlying token
             return (outputAmount, underlyingToken);
+        } else if (action.actionType == ActionType.BRIDGE) {
+            (address token, uint32 destination, bytes32 recipient, bytes memory additionalData) =
+                abi.decode(action.data, (address, uint32, bytes32, bytes));
+
+            if (token == address(0)) {
+                inputToken = previousOutputToken;
+            } else {
+                inputToken = token;
+            }
+
+            inputAmount = _calculateInputAmount(inputToken, action.inputAmountPercentage);
+
+            // Approve Bridge Router
+            IERC20(inputToken).forceApprove(action.targetContract, inputAmount);
+
+            // Execute Bridge
+            // Note: If the bridge requires a fee, msg.value should have been passed to executeWorkflow
+            // However, implementing dynamic fee passing from the original msg.value is complex in a loop.
+            // For now, we assume the specific bridge function might not need ETH if it's just ERC20 bridging,
+            // OR the contract holds enough ETH.
+            // If the bridge function is payable, we can pass 0 or a specific amount if we had it.
+            // Ideally, we'd have a 'nativeFee' field or pull it from 'additionalData'.
+            // Here we just call it.
+
+            IBridgeRouter(action.targetContract).bridge{value: 0}(
+                inputToken, destination, recipient, inputAmount, additionalData
+            );
+
+            emit ActionExecuted(index, action.actionType, action.targetContract, inputAmount, 0);
+            return (0, address(0));
         }
         return (0, address(0));
     }

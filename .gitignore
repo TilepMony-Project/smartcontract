@@ -3,6 +3,7 @@ out
 cache
 broadcast
 dist
+lib
 
 # Environment variables
 .env

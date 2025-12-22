@@ -40,6 +40,7 @@ cp .env.example .env.swap
 ```
 
 Then edit `.env.swap` with your keys, RPCs, and token addresses.
+Set `SWAP_SALT_STRING` to a fixed value and keep it the same on every chain so all swap contracts deploy to identical addresses.
 
 Load the swap env file before every Forge command:
 ```bash
@@ -56,6 +57,8 @@ dotenv -f .env.swap forge script ...
 2) Adapters
 3) Aggregator
 4) Initial rates
+
+Deployments use the EIP-2470 singleton factory with `SWAP_SALT_STRING` to keep addresses identical across chains.
 
 ### Base Sepolia
 ```bash

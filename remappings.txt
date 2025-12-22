@@ -3,3 +3,10 @@ erc4626-tests/=lib/openzeppelin-contracts/lib/erc4626-tests/
 forge-std/=lib/forge-std/src/
 halmos-cheatcodes/=lib/openzeppelin-contracts/lib/halmos-cheatcodes/src/
 openzeppelin-contracts/=lib/openzeppelin-contracts/
+
+@hyperlane-xyz/core/libs/=lib/hyperlane-monorepo/solidity/contracts/libs/
+@hyperlane-xyz/core/contracts/=lib/hyperlane-monorepo/solidity/contracts/
+@hyperlane-xyz/core/token/=lib/hyperlane-monorepo/typescript/token/contracts/
+@openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/
+
+@openzeppelin/contracts/utils/=lib/openzeppelin-contracts/contracts/utils/

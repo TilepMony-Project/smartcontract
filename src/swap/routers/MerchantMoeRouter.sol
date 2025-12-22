@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {HypERC20} from "@hyperlane-xyz/core/token/HypERC20.sol";
 import {ISwapRouter} from "../interfaces/ISwapRouter.sol";
 import {Ownable} from "openzeppelin-contracts/contracts/access/Ownable.sol";
 
@@ -75,10 +75,10 @@ contract MerchantMoeRouter is ISwapRouter, Ownable {
         uint256 amountOut = rate * amountIn / RATE_DECIMAL;
         require(amountOut >= minAmountOut, "MerchantMoeRouter: slippage too high");
 
-        bool inputSuccess = IERC20(tokenIn).transferFrom(msg.sender, address(this), amountIn);
+        bool inputSuccess = HypERC20(tokenIn).transferFrom(msg.sender, address(this), amountIn);
         require(inputSuccess, "MerchantMoeRouter: failed to pull token from adapter");
 
-        bool outputSuccess = IERC20(tokenOut).transfer(to, amountOut);
+        bool outputSuccess = HypERC20(tokenOut).transfer(to, amountOut);
         require(outputSuccess, "MerchantMoeRouter: failed to take output token");
 
         amounts = new uint256[](2);

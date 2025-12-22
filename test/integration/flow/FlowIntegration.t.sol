@@ -17,9 +17,13 @@ import {
     MockInterchainSecurityModule
 } from "../../../test/mocks/HyperlaneStubs.sol";
 
-import {InitCapitalAdapter} from "../../../src/yield/adapters/InitCapitalAdapter.sol";
+import {
+    InitCapitalAdapter
+} from "../../../src/yield/adapters/InitCapitalAdapter.sol";
 import {MockInitCore} from "../../../src/yield/mocks/initCore/MockInitCore.sol";
-import {MockLendingPool} from "../../../src/yield/mocks/initCore/MockLendingPool.sol";
+import {
+    MockLendingPool
+} from "../../../src/yield/mocks/initCore/MockLendingPool.sol";
 
 contract FlowIntegrationTest is Test {
     MainController controller;
@@ -77,7 +81,11 @@ contract FlowIntegrationTest is Test {
         // 5. Deploy Init Capital System (Yield)
         initCore = new MockInitCore();
         // LendingPool needs to be for IDRX
-        lendingPool = new MockLendingPool(address(idrx), "Init Yield IDRX", "inIDRX");
+        lendingPool = new MockLendingPool(
+            address(idrx),
+            "Init Yield IDRX",
+            "inIDRX"
+        );
         initAdapter = new InitCapitalAdapter(address(initCore));
         initAdapter.setPool(address(idrx), address(lendingPool));
 
@@ -97,8 +105,22 @@ contract FlowIntegrationTest is Test {
         vm.stopPrank();
     }
 
-    function _deployToken(string memory name, string memory symbol) internal returns (TokenHypERC20) {
-        return new TokenHypERC20(address(mailbox), 6, name, symbol, address(igp), address(ism), user, 0, address(this));
+    function _deployToken(
+        string memory name,
+        string memory symbol
+    ) internal returns (TokenHypERC20) {
+        return
+            new TokenHypERC20(
+                address(mailbox),
+                6,
+                name,
+                symbol,
+                address(igp),
+                address(ism),
+                user,
+                0,
+                address(this)
+            );
     }
 
     function test_Flow_Mint_Swap_Transfer() public {
@@ -106,7 +128,9 @@ contract FlowIntegrationTest is Test {
 
         console.log("--- Start: Mint -> Swap -> Transfer ---");
 
-        IMainController.Action[] memory actions = new IMainController.Action[](3);
+        IMainController.Action[] memory actions = new IMainController.Action[](
+            3
+        );
 
         // Action 1: Mint USDT
         uint256 mintAmount = 100 * 1e6;
@@ -119,7 +143,14 @@ contract FlowIntegrationTest is Test {
 
         // Action 2: Swap USDT -> IDRX
         // swapWithProvider(adapter, tokenIn, tokenOut, amountIn, minAmountOut, to)
-        bytes memory swapData = abi.encode(address(fusionXAdapter), address(usdt), address(idrx), 0, 0, address(0));
+        bytes memory swapData = abi.encode(
+            address(fusionXAdapter),
+            address(usdt),
+            address(idrx),
+            0,
+            0,
+            address(0)
+        );
 
         actions[1] = IMainController.Action({
             actionType: IMainController.ActionType.SWAP,
@@ -143,7 +174,11 @@ contract FlowIntegrationTest is Test {
         uint256 user2Idrx = idrx.balanceOf(user2);
         uint256 expectedIdrx = 1650000 * 1e6; // 100 * 16500
 
-        assertEq(user2Idrx, expectedIdrx, "User2 should have correct IDRX amount");
+        assertEq(
+            user2Idrx,
+            expectedIdrx,
+            "User2 should have correct IDRX amount"
+        );
         console.log("User2 IDRX Balance:", user2Idrx);
 
         vm.stopPrank();
@@ -152,9 +187,13 @@ contract FlowIntegrationTest is Test {
     function test_Flow_Mint_Swap_Yield_Transfer() public {
         vm.startPrank(user);
 
-        console.log("--- Start: Mint -> Swap -> Yield (Compound) -> Transfer Shares ---");
+        console.log(
+            "--- Start: Mint -> Swap -> Yield (Compound) -> Transfer Shares ---"
+        );
 
-        IMainController.Action[] memory actions = new IMainController.Action[](4);
+        IMainController.Action[] memory actions = new IMainController.Action[](
+            4
+        );
 
         // Action 1: Mint USDT
         uint256 mintAmount = 100 * 1e6;
@@ -166,7 +205,14 @@ contract FlowIntegrationTest is Test {
         });
 
         // Action 2: Swap USDT -> IDRX
-        bytes memory swapData = abi.encode(address(fusionXAdapter), address(usdt), address(idrx), 0, 0, address(0));
+        bytes memory swapData = abi.encode(
+            address(fusionXAdapter),
+            address(usdt),
+            address(idrx),
+            0,
+            0,
+            address(0)
+        );
 
         actions[1] = IMainController.Action({
             actionType: IMainController.ActionType.SWAP,
@@ -176,7 +222,12 @@ contract FlowIntegrationTest is Test {
         });
 
         // Action 3: Yield Deposit IDRX into Compound
-        bytes memory yieldData = abi.encode(address(compoundAdapter), address(idrx), 0, "");
+        bytes memory yieldData = abi.encode(
+            address(compoundAdapter),
+            address(idrx),
+            0,
+            ""
+        );
 
         actions[2] = IMainController.Action({
             actionType: IMainController.ActionType.YIELD,
@@ -200,7 +251,11 @@ contract FlowIntegrationTest is Test {
         // Verify:
         // 1. MockComet should hold the IDRX
         uint256 expectedCometIdrx = 1650000 * 1e6;
-        assertEq(idrx.balanceOf(address(mockComet)), expectedCometIdrx, "MockComet should hold underlying IDRX");
+        assertEq(
+            idrx.balanceOf(address(mockComet)),
+            expectedCometIdrx,
+            "MockComet should hold underlying IDRX"
+        );
 
         // 2. User2 should hold the Shares (Comet Token)
         // MockComet mints 1:1, so User2 should have 1,650,000 * 1e6 cToken
@@ -209,10 +264,18 @@ contract FlowIntegrationTest is Test {
         console.log("User2 Shares (Comet):", sharesUser2);
 
         // Assert shares
-        assertEq(sharesUser2, expectedCometIdrx, "User2 should hold Compound Shares");
+        assertEq(
+            sharesUser2,
+            expectedCometIdrx,
+            "User2 should hold Compound Shares"
+        );
 
         // 3. Controller should have 0 shares
-        assertEq(mockComet.balanceOf(address(controller)), 0, "Controller should have 0 Shares");
+        assertEq(
+            mockComet.balanceOf(address(controller)),
+            0,
+            "Controller should have 0 Shares"
+        );
 
         vm.stopPrank();
     }
@@ -220,9 +283,13 @@ contract FlowIntegrationTest is Test {
     function test_Flow_Mint_Swap_Init_Yield_Transfer() public {
         vm.startPrank(user);
 
-        console.log("--- Start: Mint -> Swap -> Yield (InitCapital) -> Transfer Shares ---");
+        console.log(
+            "--- Start: Mint -> Swap -> Yield (InitCapital) -> Transfer Shares ---"
+        );
 
-        IMainController.Action[] memory actions = new IMainController.Action[](4);
+        IMainController.Action[] memory actions = new IMainController.Action[](
+            4
+        );
 
         // Action 1: Mint USDT
         actions[0] = IMainController.Action({
@@ -236,7 +303,14 @@ contract FlowIntegrationTest is Test {
         actions[1] = IMainController.Action({
             actionType: IMainController.ActionType.SWAP,
             targetContract: address(swapAggregator),
-            data: abi.encode(address(fusionXAdapter), address(usdt), address(idrx), 0, 0, address(0)),
+            data: abi.encode(
+                address(fusionXAdapter),
+                address(usdt),
+                address(idrx),
+                0,
+                0,
+                address(0)
+            ),
             inputAmountPercentage: 10000
         });
 
@@ -263,7 +337,11 @@ contract FlowIntegrationTest is Test {
         // Verify:
         // 1. MockLendingPool should hold the IDRX
         uint256 expectedIdrx = 1650000 * 1e6;
-        assertEq(idrx.balanceOf(address(lendingPool)), expectedIdrx, "LendingPool should hold underlying IDRX");
+        assertEq(
+            idrx.balanceOf(address(lendingPool)),
+            expectedIdrx,
+            "LendingPool should hold underlying IDRX"
+        );
 
         // 2. User2 should hold the Shares
         // MockInitCore currently hardcodes minting "100 ether" shares regardless of input.
@@ -271,7 +349,11 @@ contract FlowIntegrationTest is Test {
         uint256 sharesUser2 = lendingPool.balanceOf(user2);
         console.log("User2 Shares (Init Pool):", sharesUser2);
 
-        assertEq(sharesUser2, expectedIdrx, "User2 should hold Init Shares (1:1 with Underlying)");
+        assertEq(
+            sharesUser2,
+            expectedIdrx * 1e8,
+            "User2 should hold Init Shares (1:1 with Underlying scaled by 1e8)"
+        );
 
         vm.stopPrank();
     }

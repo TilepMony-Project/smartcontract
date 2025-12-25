@@ -8,19 +8,28 @@ YELLOW := \033[1;33m
 RED := \033[0;31m
 RESET := \033[0m
 
-ENV_FOUND :=
-ifneq (,$(wildcard ./.env.swap))
-  include .env.swap
-  export $(shell sed 's/=.*//' .env.swap)
-  ENV_FOUND := yes
+# Load env based on target prefix (default .env):
+# - swap-*     -> .env.swap
+# - token-*    -> .env.token
+# - bridge-*   -> .env.token
+GOAL_PREFIX   := $(firstword $(subst -, ,$(firstword $(MAKECMDGOALS))))
+ENV_FILE      := .env
+
+ifeq ($(GOAL_PREFIX),swap)
+  ENV_FILE := .env.swap
 endif
-ifneq (,$(wildcard ./.env))
-  include .env
-  export $(shell sed 's/=.*//' .env)
-  ENV_FOUND := yes
+ifeq ($(GOAL_PREFIX),token)
+  ENV_FILE := .env.token
 endif
-ifeq ($(ENV_FOUND),)
-  $(error .env or .env.swap file not found! Please create one.)
+ifeq ($(GOAL_PREFIX),bridge)
+  ENV_FILE := .env.token
+endif
+
+ifneq (,$(wildcard $(ENV_FILE)))
+  include $(ENV_FILE)
+  export $(shell sed 's/=.*//' $(ENV_FILE))
+else
+  $(error Missing $(ENV_FILE) for target $(MAKECMDGOALS))
 endif
 
 build:

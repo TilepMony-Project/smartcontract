@@ -8,28 +8,37 @@ import {MerchantMoeAdapter} from "../src/swap/adapters/MerchantMoeAdapter.sol";
 import {VertexAdapter} from "../src/swap/adapters/VertexAdapter.sol";
 
 contract AddLiquidity is Script {
-    // Adapter Addresses from contractConfig.ts
-    address constant FUSIONX_ADAPTER = 0x864d3a6F4804ABd32D7b42414E33Ed1CAeC5F505;
-    address constant MERCHANT_MOE_ADAPTER = 0xA80e0Cc68389D3e98Fd41887e70580d5D260f022;
-    address constant VERTEX_ADAPTER = 0x20e7f518Bf77cde999Dba30758F7C562Db0b5A9C;
-
-    // Tokens
-    address constant IDRX = 0xc39DfE81DcAd49F1Da4Ff8d41f723922Febb75dc;
-    address constant USDC = 0x681db03Ef13e37151e9fd68920d2c34273194379;
-    address constant USDT = 0x9a82fC0c460A499b6ce3d6d8A29835a438B5Ec28;
+    uint256 internal constant AMOUNT_USD = 1_000_000 * 1e6;
+    uint256 internal constant AMOUNT_IDRX = 10_000_000_000 * 1e6;
 
     function run() public {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address deployer = vm.addr(deployerPrivateKey);
 
+        address fusionXAdapter = vm.envAddress("FUSIONX_ADAPTER");
+        address merchantMoeAdapter = vm.envAddress("MERCHANT_MOE_ADAPTER");
+        address vertexAdapter = vm.envAddress("VERTEX_ADAPTER");
+        address idrx = vm.envAddress("IDRX_ADDRESS");
+        address usdc = vm.envAddress("USDC_ADDRESS");
+        address usdt = vm.envAddress("USDT_ADDRESS");
+
+        _requireNonZero(fusionXAdapter, "FUSIONX_ADAPTER");
+        _requireNonZero(merchantMoeAdapter, "MERCHANT_MOE_ADAPTER");
+        _requireNonZero(vertexAdapter, "VERTEX_ADAPTER");
+        _requireNonZero(idrx, "IDRX_ADDRESS");
+        _requireNonZero(usdc, "USDC_ADDRESS");
+        _requireNonZero(usdt, "USDT_ADDRESS");
+
         console.log("Deployer:", deployer);
+        console.log("Adapters:", fusionXAdapter, merchantMoeAdapter, vertexAdapter);
+        console.log("Tokens:", idrx, usdc, usdt);
 
         vm.startBroadcast(deployerPrivateKey);
 
         // 1. Get Router Addresses dynamically
-        address fusionXRouter = address(FusionXAdapter(FUSIONX_ADAPTER).ROUTER());
-        address merchantMoeRouter = address(MerchantMoeAdapter(MERCHANT_MOE_ADAPTER).ROUTER());
-        address vertexRouter = address(VertexAdapter(VERTEX_ADAPTER).ROUTER());
+        address fusionXRouter = address(FusionXAdapter(fusionXAdapter).ROUTER());
+        address merchantMoeRouter = address(MerchantMoeAdapter(merchantMoeAdapter).ROUTER());
+        address vertexRouter = address(VertexAdapter(vertexAdapter).ROUTER());
 
         address[3] memory routers = [fusionXRouter, merchantMoeRouter, vertexRouter];
         string[3] memory names = ["FusionX", "MerchantMoe", "Vertex"];
@@ -41,19 +50,23 @@ contract AddLiquidity is Script {
             console.log("Adding liquidity to", name, "Router:", router);
 
             // USDC
-            TokenHypERC20(USDC).giveMe(1000000 * 1e6);
-            require(TokenHypERC20(USDC).transfer(router, 1000000 * 1e6), "USDC Transfer failed");
+            TokenHypERC20(usdc).giveMe(AMOUNT_USD);
+            require(TokenHypERC20(usdc).transfer(router, AMOUNT_USD), "USDC Transfer failed");
 
             // USDT
-            TokenHypERC20(USDT).giveMe(1000000 * 1e6);
-            require(TokenHypERC20(USDT).transfer(router, 1000000 * 1e6), "USDT Transfer failed");
+            TokenHypERC20(usdt).giveMe(AMOUNT_USD);
+            require(TokenHypERC20(usdt).transfer(router, AMOUNT_USD), "USDT Transfer failed");
 
             // IDRX
-            TokenHypERC20(IDRX).giveMe(10000000000 * 1e6);
-            require(TokenHypERC20(IDRX).transfer(router, 10000000000 * 1e6), "IDRX Transfer failed");
+            TokenHypERC20(idrx).giveMe(AMOUNT_IDRX);
+            require(TokenHypERC20(idrx).transfer(router, AMOUNT_IDRX), "IDRX Transfer failed");
         }
 
         console.log("Liquidity Added to ALL Routers!");
         vm.stopBroadcast();
+    }
+
+    function _requireNonZero(address a, string memory label) internal pure {
+        require(a != address(0), label);
     }
 }

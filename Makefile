@@ -1,6 +1,7 @@
 .PHONY: build size rpc run deploy deploy-token deploy-yield deploy-swap deploy-controller \
 	inject-liquidity add-liquidity-router update-rates check-router-liquidity \
-	swap-deploy-base swap-deploy-mantle swap-deploy-all swap-update-rates-base swap-update-rates-mantle
+	swap-deploy-base swap-deploy-mantle swap-deploy-all swap-update-rates-base swap-update-rates-mantle \
+	swap-add-liquidity-base swap-add-liquidity-mantle swap-add-liquidity-all
 
 GREEN := \033[0;32m
 CYAN := \033[0;36m
@@ -88,6 +89,37 @@ add-liquidity-router:
 	@forge script script/AddLiquidity.s.sol \
 		--rpc-url $(RPC_URL) \
 		--broadcast -vvv
+
+# Swap liquidity (Base + Mantle)
+swap-add-liquidity-base:
+	@echo "$(CYAN)[SWAP] Adding liquidity (Base Sepolia)...$(RESET)"
+	@SWAP_CHAIN=BASE \
+	FUSIONX_ADAPTER=$(FUSIONX_ADAPTER_BASE) \
+	MERCHANT_MOE_ADAPTER=$(MERCHANT_MOE_ADAPTER_BASE) \
+	VERTEX_ADAPTER=$(VERTEX_ADAPTER_BASE) \
+	IDRX_ADDRESS=$(BASE_IDRX_ADDRESS) \
+	USDC_ADDRESS=$(BASE_USDC_ADDRESS) \
+	USDT_ADDRESS=$(BASE_USDT_ADDRESS) \
+	forge script script/AddLiquidity.s.sol:AddLiquidity \
+		--rpc-url "$(BASE_SEPOLIA_RPC_URL)" \
+		--broadcast -vvv
+
+swap-add-liquidity-mantle:
+	@echo "$(CYAN)[SWAP] Adding liquidity (Mantle Sepolia)...$(RESET)"
+	@SWAP_CHAIN=MANTLE \
+	FUSIONX_ADAPTER=$(FUSIONX_ADAPTER_MANTLE) \
+	MERCHANT_MOE_ADAPTER=$(MERCHANT_MOE_ADAPTER_MANTLE) \
+	VERTEX_ADAPTER=$(VERTEX_ADAPTER_MANTLE) \
+	IDRX_ADDRESS=$(MANTLE_IDRX_ADDRESS) \
+	USDC_ADDRESS=$(MANTLE_USDC_ADDRESS) \
+	USDT_ADDRESS=$(MANTLE_USDT_ADDRESS) \
+	forge script script/AddLiquidity.s.sol:AddLiquidity \
+		--rpc-url "$(MANTLE_SEPOLIA_RPC_URL)" \
+		--broadcast -vvv
+
+swap-add-liquidity-all:
+	@$(MAKE) swap-add-liquidity-base
+	@$(MAKE) swap-add-liquidity-mantle
 
 update-rates:
 	@echo "$(CYAN)[UPDATE] Updating exchange rates for mTokens...$(RESET)"

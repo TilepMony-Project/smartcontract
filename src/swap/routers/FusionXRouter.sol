@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {HypERC20} from "@hyperlane-xyz/core/token/HypERC20.sol";
 import {ISwapRouter} from "../interfaces/ISwapRouter.sol";
 import {Ownable} from "openzeppelin-contracts/contracts/access/Ownable.sol";
 
@@ -25,10 +25,12 @@ contract FusionXRouter is ISwapRouter, Ownable {
     mapping(address => mapping(address => uint256)) public exchangeRate;
 
     /**
-     * @notice Constructor that sets the deployer as the contract owner.
-     * @dev Initializes the contract by setting `msg.sender` as the initial owner, leveraging the `Ownable` contract.
+     * @notice Constructor that sets a custom owner (EOA).
+     * @dev EIP-2470 singleton factory deploys as msg.sender, so we override ownership here.
      */
-    constructor() Ownable() {}
+    constructor(address initialOwner) Ownable() {
+        _transferOwnership(initialOwner);
+    }
 
     /// @inheritdoc ISwapRouter
     // The contract inherits from ISwapRouter, which typically defines the swap function interface.
@@ -75,10 +77,10 @@ contract FusionXRouter is ISwapRouter, Ownable {
         uint256 amountOut = rate * amountIn / RATE_DECIMAL;
         require(amountOut >= minAmountOut, "FusionXRouter: slippage too high");
 
-        bool inputSuccess = IERC20(tokenIn).transferFrom(msg.sender, address(this), amountIn);
+        bool inputSuccess = HypERC20(tokenIn).transferFrom(msg.sender, address(this), amountIn);
         require(inputSuccess, "FusionXRouter: failed to pull token from adapter");
 
-        bool outputSuccess = IERC20(tokenOut).transfer(to, amountOut);
+        bool outputSuccess = HypERC20(tokenOut).transfer(to, amountOut);
         require(outputSuccess, "FusionXRouter: failed to transfer token to user");
 
         amounts = new uint256[](2);

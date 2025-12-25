@@ -5,7 +5,9 @@ This guide describes how to deploy the TilepMony smart contract system, includin
 ## Prerequisites
 
 - **Foundry**: Ensure you have Foundry installed (`forge`, `cast`).
-- **Environment Variables**: Create a `.env` file based on `.env.example`.
+- **Environment Variables**:
+  - Create a `.env` file based on `.env.example` for core deploys.
+  - Create a `.env.swap` file (see `readme_swap.md`) for swap stack (Base/Mantle).
   
   Required variables:
   ```env
@@ -43,12 +45,16 @@ If you need cross-chain capabilities:
 forge script script/TokenCrossChain.s.sol --rpc-url $RPC_URL --broadcast --verify
 ```
 
-### 3. Deploy Swap System
+### 3. Deploy Swap System (Base + Mantle)
 
 This script deploys the mock Swap Routers (FusionX, MerchantMoe, Vertex), their Adapters, and the central `SwapAggregator`. It also initializes some default exchange rates (1:1 for stablecoins).
 
+Recommended (Makefile targets):
 ```bash
-make deploy-swap
+make swap-deploy-base
+make swap-deploy-mantle
+# or
+make swap-deploy-all
 ```
 
 **Key Contracts Deployed:**

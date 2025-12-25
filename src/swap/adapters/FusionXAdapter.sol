@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {HypERC20} from "@hyperlane-xyz/core/token/HypERC20.sol";
 import {ISwapAdapter} from "../interfaces/ISwapAdapter.sol";
 import {ISwapRouter} from "../interfaces/ISwapRouter.sol";
 
@@ -50,10 +50,10 @@ contract FusionXAdapter is ISwapAdapter {
         external
         returns (uint256 amountOut)
     {
-        bool pullSuccess = IERC20(tokenIn).transferFrom(from, address(this), amountIn);
+        bool pullSuccess = HypERC20(tokenIn).transferFrom(from, address(this), amountIn);
         require(pullSuccess, "FusionXAdapter: failed to pull token from aggregator to adapter");
 
-        bool approveSuccess = IERC20(tokenIn).approve(address(ROUTER), amountIn);
+        bool approveSuccess = HypERC20(tokenIn).approve(address(ROUTER), amountIn);
         require(approveSuccess, "FusionXAdapter: failed to approve router to spend the tokens");
 
         address[] memory path = new address[](2);

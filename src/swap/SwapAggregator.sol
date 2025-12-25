@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {HypERC20} from "@hyperlane-xyz/core/token/HypERC20.sol";
 import {ISwapAdapter} from "./interfaces/ISwapAdapter.sol";
 import {ISwapAggregator} from "./interfaces/ISwapAggregator.sol";
 import {Ownable} from "openzeppelin-contracts/contracts/access/Ownable.sol";
@@ -21,10 +21,12 @@ contract SwapAggregator is ISwapAggregator, Ownable {
     mapping(address => bool) isTrustedAdapter;
 
     /**
-     * @notice Constructor that sets the deployer as the contract owner.
-     * @dev Initializes the contract by setting `msg.sender` as the initial owner, leveraging the `Ownable` contract.
+     * @notice Constructor that sets a custom owner (EOA).
+     * @dev EIP-2470 singleton factory deploys as msg.sender, so we override ownership here.
      */
-    constructor() Ownable() {}
+    constructor(address initialOwner) Ownable() {
+        _transferOwnership(initialOwner);
+    }
 
     // --- Admin Functions ---
 
@@ -76,10 +78,10 @@ contract SwapAggregator is ISwapAggregator, Ownable {
     ) external returns (uint256 amountOut) {
         require(isTrustedAdapter[adapterAddress], "SwapAggregator: untrusted adapter");
 
-        bool pullSuccess = IERC20(tokenIn).transferFrom(msg.sender, address(this), amountIn);
+        bool pullSuccess = HypERC20(tokenIn).transferFrom(msg.sender, address(this), amountIn);
         require(pullSuccess, "SwapAggregator: failed to pull token from user to aggregator");
 
-        bool approveSuccess = IERC20(tokenIn).approve(adapterAddress, amountIn);
+        bool approveSuccess = HypERC20(tokenIn).approve(adapterAddress, amountIn);
         require(approveSuccess, "SwapAggregator: failed to approve adapter to spend the tokens");
 
         amountOut = ISwapAdapter(adapterAddress).swap(tokenIn, tokenOut, amountIn, minAmountOut, address(this), to);

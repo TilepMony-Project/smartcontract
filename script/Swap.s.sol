@@ -25,6 +25,7 @@ contract SwapScript is Script {
 
     function run() public {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        address owner = vm.envOr("OWNER", vm.addr(deployerPrivateKey));
         address idrx = vm.envAddress("IDRX_ADDRESS");
         address usdc = vm.envAddress("USDC_ADDRESS");
         address usdt = vm.envAddress("USDT_ADDRESS");
@@ -32,17 +33,21 @@ contract SwapScript is Script {
         string memory saltString = vm.envOr("SWAP_SALT_STRING", string("SWAP_STACK_V1"));
         bytes32 baseSalt = keccak256(bytes(saltString));
 
+        string memory rpcUrl = vm.envOr("RPC_URL", string(""));
+        console.log("RPC_URL:", bytes(rpcUrl).length == 0 ? "<not set>" : rpcUrl);
+        console.log("SWAP_SALT_STRING:", saltString);
+        console.logBytes32(baseSalt);
+        console.log("Owner:", owner);
+        console.log("IDRX:", idrx);
+        console.log("USDC:", usdc);
+        console.log("USDT:", usdt);
+
         vm.startBroadcast(deployerPrivateKey);
 
         // 1. Deploy Routers
-        address fusionXRouterAddr = _deploy(
-            type(FusionXRouter).creationCode, _salt(baseSalt, "FUSIONX_ROUTER"), "FusionX router"
-        );
-        address merchantMoeRouterAddr = _deploy(
-            type(MerchantMoeRouter).creationCode, _salt(baseSalt, "MERCHANT_MOE_ROUTER"), "MerchantMoe router"
-        );
-        address vertexRouterAddr =
-            _deploy(type(VertexRouter).creationCode, _salt(baseSalt, "VERTEX_ROUTER"), "Vertex router");
+        address fusionXRouterAddr = _deployFusionXRouter(baseSalt, owner);
+        address merchantMoeRouterAddr = _deployMerchantMoeRouter(baseSalt, owner);
+        address vertexRouterAddr = _deployVertexRouter(baseSalt, owner);
 
         fusionXRouter = FusionXRouter(fusionXRouterAddr);
         merchantMoeRouter = MerchantMoeRouter(merchantMoeRouterAddr);
@@ -65,36 +70,78 @@ contract SwapScript is Script {
         _setPairRate(vertexRouterAddr, usdt, usdc, one);
 
         // 3. Deploy Adapters
-        address fusionXAdapterAddr = _deploy(
-            abi.encodePacked(type(FusionXAdapter).creationCode, abi.encode(fusionXRouterAddr)),
-            _salt(baseSalt, "FUSIONX_ADAPTER"),
-            "FusionX adapter"
-        );
-        address merchantMoeAdapterAddr = _deploy(
-            abi.encodePacked(type(MerchantMoeAdapter).creationCode, abi.encode(merchantMoeRouterAddr)),
-            _salt(baseSalt, "MERCHANT_MOE_ADAPTER"),
-            "MerchantMoe adapter"
-        );
-        address vertexAdapterAddr = _deploy(
-            abi.encodePacked(type(VertexAdapter).creationCode, abi.encode(vertexRouterAddr)),
-            _salt(baseSalt, "VERTEX_ADAPTER"),
-            "Vertex adapter"
-        );
+        address fusionXAdapterAddr = _deployFusionXAdapter(baseSalt, fusionXRouterAddr);
+        address merchantMoeAdapterAddr = _deployMerchantMoeAdapter(baseSalt, merchantMoeRouterAddr);
+        address vertexAdapterAddr = _deployVertexAdapter(baseSalt, vertexRouterAddr);
 
         fusionXAdapter = FusionXAdapter(fusionXAdapterAddr);
         merchantMoeAdapter = MerchantMoeAdapter(merchantMoeAdapterAddr);
         vertexAdapter = VertexAdapter(vertexAdapterAddr);
 
         // 4. Deploy Aggregator & Whitelist Adapters
-        address swapAggregatorAddr = _deploy(
-            type(SwapAggregator).creationCode, _salt(baseSalt, "SWAP_AGGREGATOR"), "Swap aggregator"
-        );
+        address swapAggregatorAddr = _deploySwapAggregator(baseSalt, owner);
         swapAggregator = SwapAggregator(swapAggregatorAddr);
         swapAggregator.addTrustedAdapter(fusionXAdapterAddr);
         swapAggregator.addTrustedAdapter(merchantMoeAdapterAddr);
         swapAggregator.addTrustedAdapter(vertexAdapterAddr);
 
         vm.stopBroadcast();
+    }
+
+    function _deployFusionXRouter(bytes32 baseSalt, address owner) internal returns (address) {
+        return _deploy(
+            abi.encodePacked(type(FusionXRouter).creationCode, abi.encode(owner)),
+            _salt(baseSalt, "FUSIONX_ROUTER"),
+            "FusionX router"
+        );
+    }
+
+    function _deployMerchantMoeRouter(bytes32 baseSalt, address owner) internal returns (address) {
+        return _deploy(
+            abi.encodePacked(type(MerchantMoeRouter).creationCode, abi.encode(owner)),
+            _salt(baseSalt, "MERCHANT_MOE_ROUTER"),
+            "MerchantMoe router"
+        );
+    }
+
+    function _deployVertexRouter(bytes32 baseSalt, address owner) internal returns (address) {
+        return _deploy(
+            abi.encodePacked(type(VertexRouter).creationCode, abi.encode(owner)),
+            _salt(baseSalt, "VERTEX_ROUTER"),
+            "Vertex router"
+        );
+    }
+
+    function _deployFusionXAdapter(bytes32 baseSalt, address router) internal returns (address) {
+        return _deploy(
+            abi.encodePacked(type(FusionXAdapter).creationCode, abi.encode(router)),
+            _salt(baseSalt, "FUSIONX_ADAPTER"),
+            "FusionX adapter"
+        );
+    }
+
+    function _deployMerchantMoeAdapter(bytes32 baseSalt, address router) internal returns (address) {
+        return _deploy(
+            abi.encodePacked(type(MerchantMoeAdapter).creationCode, abi.encode(router)),
+            _salt(baseSalt, "MERCHANT_MOE_ADAPTER"),
+            "MerchantMoe adapter"
+        );
+    }
+
+    function _deployVertexAdapter(bytes32 baseSalt, address router) internal returns (address) {
+        return _deploy(
+            abi.encodePacked(type(VertexAdapter).creationCode, abi.encode(router)),
+            _salt(baseSalt, "VERTEX_ADAPTER"),
+            "Vertex adapter"
+        );
+    }
+
+    function _deploySwapAggregator(bytes32 baseSalt, address owner) internal returns (address) {
+        return _deploy(
+            abi.encodePacked(type(SwapAggregator).creationCode, abi.encode(owner)),
+            _salt(baseSalt, "SWAP_AGGREGATOR"),
+            "Swap aggregator"
+        );
     }
 
     function _setPairRate(address router, address tokenIn, address tokenOut, uint256 rate) internal {

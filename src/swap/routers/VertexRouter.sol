@@ -25,10 +25,12 @@ contract VertexRouter is ISwapRouter, Ownable {
     mapping(address => mapping(address => uint256)) public exchangeRate;
 
     /**
-     * @notice Constructor that sets the deployer as the contract owner.
-     * @dev Initializes the contract by setting `msg.sender` as the initial owner, leveraging the `Ownable` contract.
+     * @notice Constructor that sets a custom owner (EOA).
+     * @dev EIP-2470 singleton factory deploys as msg.sender, so we override ownership here.
      */
-    constructor() Ownable() {}
+    constructor(address initialOwner) Ownable() {
+        _transferOwnership(initialOwner);
+    }
 
     /// @inheritdoc ISwapRouter
     // The contract inherits from ISwapRouter, which typically defines the swap function interface.

@@ -21,10 +21,12 @@ contract SwapAggregator is ISwapAggregator, Ownable {
     mapping(address => bool) isTrustedAdapter;
 
     /**
-     * @notice Constructor that sets the deployer as the contract owner.
-     * @dev Initializes the contract by setting `msg.sender` as the initial owner, leveraging the `Ownable` contract.
+     * @notice Constructor that sets a custom owner (EOA).
+     * @dev EIP-2470 singleton factory deploys as msg.sender, so we override ownership here.
      */
-    constructor() Ownable() {}
+    constructor(address initialOwner) Ownable() {
+        _transferOwnership(initialOwner);
+    }
 
     // --- Admin Functions ---
 

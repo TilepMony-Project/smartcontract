@@ -48,6 +48,7 @@ set -a && source .env.swap && forge test -vvv
 # or
 dotenv -f .env.swap forge script ...
 ```
+Makefile will also load `.env.swap` automatically if present.
 
 ---
 
@@ -61,6 +62,12 @@ dotenv -f .env.swap forge script ...
 Deployments use the EIP-2470 singleton factory with `SWAP_SALT_STRING` to keep addresses identical across chains.
 
 ### Base Sepolia
+Recommended:
+```bash
+make swap-deploy-base
+```
+
+Manual:
 ```bash
 export IDRX_ADDRESS=$BASE_IDRX_ADDRESS
 export USDC_ADDRESS=$BASE_USDC_ADDRESS
@@ -68,11 +75,17 @@ export USDT_ADDRESS=$BASE_USDT_ADDRESS
 
 forge script script/Swap.s.sol:SwapScript \
   --rpc-url $BASE_SEPOLIA_RPC_URL \
-  --broadcast \
+  --broadcast --via-ir \
   -vvv
 ```
 
 ### Mantle Sepolia
+Recommended:
+```bash
+make swap-deploy-mantle
+```
+
+Manual:
 ```bash
 export IDRX_ADDRESS=$MANTLE_IDRX_ADDRESS
 export USDC_ADDRESS=$MANTLE_USDC_ADDRESS
@@ -80,7 +93,7 @@ export USDT_ADDRESS=$MANTLE_USDT_ADDRESS
 
 forge script script/Swap.s.sol:SwapScript \
   --rpc-url $MANTLE_SEPOLIA_RPC_URL \
-  --broadcast \
+  --broadcast --via-ir \
   -vvv
 ```
 
@@ -101,6 +114,11 @@ SWAP_AGGREGATOR_BASE=0x...
 `script/UpdateRates.s.sol` uses hardcoded addresses. Update the constants in the script first, then run:
 
 ```bash
+make swap-update-rates-base
+```
+
+Manual:
+```bash
 forge script script/UpdateRates.s.sol:UpdateRates \
   --rpc-url $BASE_SEPOLIA_RPC_URL \
   --broadcast \
@@ -108,6 +126,11 @@ forge script script/UpdateRates.s.sol:UpdateRates \
 ```
 
 Repeat for Mantle (after updating constants):
+```bash
+make swap-update-rates-mantle
+```
+
+Manual:
 ```bash
 forge script script/UpdateRates.s.sol:UpdateRates \
   --rpc-url $MANTLE_SEPOLIA_RPC_URL \

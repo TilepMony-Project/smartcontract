@@ -3,14 +3,39 @@ pragma solidity ^0.8.30;
 
 import {Script, console} from "forge-std/Script.sol";
 import {ISwapRouter} from "../src/swap/interfaces/ISwapRouter.sol";
+import {IERC20Metadata} from "openzeppelin-contracts/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
 contract UpdateRates is Script {
+    struct TokenDecimals {
+        uint8 idrx;
+        uint8 usdc;
+        uint8 usdt;
+    }
+
     function _envAddress(string memory key) internal view returns (address) {
         return vm.envAddress(key);
     }
 
-    function _envString(string memory key, string memory fallback) internal view returns (string memory) {
-        return vm.envOr(key, fallback);
+    function _envString(string memory key, string memory defaultValue) internal view returns (string memory) {
+        return vm.envOr(key, defaultValue);
+    }
+
+    function _getTokenDecimals(address idrx, address usdc, address usdt) internal view returns (TokenDecimals memory) {
+        return TokenDecimals({
+            idrx: IERC20Metadata(idrx).decimals(),
+            usdc: IERC20Metadata(usdc).decimals(),
+            usdt: IERC20Metadata(usdt).decimals()
+        });
+    }
+
+    /// @dev Returns a rate scaled to 1e18 that accounts for differing token decimals.
+    function _scaledRate(uint256 priceNumerator, uint256 priceDenominator, uint8 decimalsOut, uint8 decimalsIn)
+        internal
+        pure
+        returns (uint256)
+    {
+        // rate = (priceNumerator / priceDenominator) * 10^(decimalsOut - decimalsIn) * 1e18
+        return priceNumerator * (10 ** decimalsOut) * 1e18 / (priceDenominator * (10 ** decimalsIn));
     }
 
     function run() public {
@@ -28,9 +53,7 @@ contract UpdateRates is Script {
 
         vm.startBroadcast(deployerPrivateKey);
 
-        uint256 one = 1e18;
-        uint256 usdIdr = 16500e18;
-        uint256 idrUsd = (1e18 * 1e18) / usdIdr; // Invert
+        TokenDecimals memory decs = _getTokenDecimals(idrx, usdc, usdt);
 
         console.log("Updating Rates for mTokens...");
         console.log("Chain profile:", chainProfile);
@@ -40,32 +63,33 @@ contract UpdateRates is Script {
         console.log("IDRX:", idrx);
         console.log("USDC:", usdc);
         console.log("USDT:", usdt);
+        console.log("Decimals (IDRX, USDC, USDT):", decs.idrx, decs.usdc, decs.usdt);
 
         // 1. FusionX
-        ISwapRouter(fusionXRouter).setRate(idrx, usdc, idrUsd);
-        ISwapRouter(fusionXRouter).setRate(usdc, idrx, usdIdr);
-        ISwapRouter(fusionXRouter).setRate(idrx, usdt, idrUsd);
-        ISwapRouter(fusionXRouter).setRate(usdt, idrx, usdIdr);
-        ISwapRouter(fusionXRouter).setRate(usdc, usdt, one);
-        ISwapRouter(fusionXRouter).setRate(usdt, usdc, one);
+        ISwapRouter(fusionXRouter).setRate(idrx, usdc, _scaledRate(1, 16_500, decs.usdc, decs.idrx));
+        ISwapRouter(fusionXRouter).setRate(usdc, idrx, _scaledRate(16_500, 1, decs.idrx, decs.usdc));
+        ISwapRouter(fusionXRouter).setRate(idrx, usdt, _scaledRate(1, 16_500, decs.usdt, decs.idrx));
+        ISwapRouter(fusionXRouter).setRate(usdt, idrx, _scaledRate(16_500, 1, decs.idrx, decs.usdt));
+        ISwapRouter(fusionXRouter).setRate(usdc, usdt, _scaledRate(1, 1, decs.usdt, decs.usdc));
+        ISwapRouter(fusionXRouter).setRate(usdt, usdc, _scaledRate(1, 1, decs.usdc, decs.usdt));
         console.log("FusionX Rates Updated");
 
         // 2. MerchantMoe
-        ISwapRouter(merchantMoeRouter).setRate(idrx, usdc, idrUsd);
-        ISwapRouter(merchantMoeRouter).setRate(usdc, idrx, usdIdr);
-        ISwapRouter(merchantMoeRouter).setRate(idrx, usdt, idrUsd);
-        ISwapRouter(merchantMoeRouter).setRate(usdt, idrx, usdIdr);
-        ISwapRouter(merchantMoeRouter).setRate(usdc, usdt, one);
-        ISwapRouter(merchantMoeRouter).setRate(usdt, usdc, one);
+        ISwapRouter(merchantMoeRouter).setRate(idrx, usdc, _scaledRate(1, 16_500, decs.usdc, decs.idrx));
+        ISwapRouter(merchantMoeRouter).setRate(usdc, idrx, _scaledRate(16_500, 1, decs.idrx, decs.usdc));
+        ISwapRouter(merchantMoeRouter).setRate(idrx, usdt, _scaledRate(1, 16_500, decs.usdt, decs.idrx));
+        ISwapRouter(merchantMoeRouter).setRate(usdt, idrx, _scaledRate(16_500, 1, decs.idrx, decs.usdt));
+        ISwapRouter(merchantMoeRouter).setRate(usdc, usdt, _scaledRate(1, 1, decs.usdt, decs.usdc));
+        ISwapRouter(merchantMoeRouter).setRate(usdt, usdc, _scaledRate(1, 1, decs.usdc, decs.usdt));
         console.log("MerchantMoe Rates Updated");
 
         // 3. Vertex (Stable-Stable)
-        ISwapRouter(vertexRouter).setRate(usdc, usdt, one);
-        ISwapRouter(vertexRouter).setRate(usdt, usdc, one);
-        ISwapRouter(vertexRouter).setRate(idrx, usdc, idrUsd);
-        ISwapRouter(vertexRouter).setRate(usdc, idrx, usdIdr);
-        ISwapRouter(vertexRouter).setRate(idrx, usdt, idrUsd);
-        ISwapRouter(vertexRouter).setRate(usdt, idrx, usdIdr);
+        ISwapRouter(vertexRouter).setRate(usdc, usdt, _scaledRate(1, 1, decs.usdt, decs.usdc));
+        ISwapRouter(vertexRouter).setRate(usdt, usdc, _scaledRate(1, 1, decs.usdc, decs.usdt));
+        ISwapRouter(vertexRouter).setRate(idrx, usdc, _scaledRate(1, 16_500, decs.usdc, decs.idrx));
+        ISwapRouter(vertexRouter).setRate(usdc, idrx, _scaledRate(16_500, 1, decs.idrx, decs.usdc));
+        ISwapRouter(vertexRouter).setRate(idrx, usdt, _scaledRate(1, 16_500, decs.usdt, decs.idrx));
+        ISwapRouter(vertexRouter).setRate(usdt, idrx, _scaledRate(16_500, 1, decs.idrx, decs.usdt));
         console.log("Vertex Rates Updated");
 
         vm.stopBroadcast();

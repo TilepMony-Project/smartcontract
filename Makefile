@@ -178,12 +178,18 @@ swap-deploy-all:
 
 swap-update-rates-base:
 	@echo "$(CYAN)[SWAP] Update rates (Base Sepolia)...$(RESET)"
-	@forge script script/UpdateRates.s.sol:UpdateRates \
-		--rpc-url $(BASE_SEPOLIA_RPC_URL) \
+	@SWAP_CHAIN=BASE \
+	forge script script/UpdateRates.s.sol:UpdateRates \
+		--rpc-url "$(BASE_SEPOLIA_RPC_URL)" \
 		--broadcast -vvv
 
 swap-update-rates-mantle:
 	@echo "$(CYAN)[SWAP] Update rates (Mantle Sepolia)...$(RESET)"
-	@forge script script/UpdateRates.s.sol:UpdateRates \
-		--rpc-url $(MANTLE_SEPOLIA_RPC_URL) \
+	@SWAP_CHAIN=MANTLE \
+	forge script script/UpdateRates.s.sol:UpdateRates \
+		--rpc-url "$(MANTLE_SEPOLIA_RPC_URL)" \
 		--broadcast -vvv
+
+swap-update-rates-all:
+	@$(MAKE) swap-update-rates-base
+	@$(MAKE) swap-update-rates-mantle
